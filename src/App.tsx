@@ -1,6 +1,7 @@
 import { useEffect,useMemo,useState } from 'react';
-import {Bell,Cake as BirthdayCake,CalendarClock,Check,ChevronRight,ClipboardList,FileBarChart,IndianRupee,LayoutDashboard,LogOut,Menu,Minus,Package,Plus,Search,Settings,ShieldCheck,Sparkles,Users,Wallet,X} from 'lucide-react';
+import {Bell,Cake as BirthdayCake,CalendarClock,Check,ChevronRight,ClipboardList,Facebook,FileBarChart,IndianRupee,LayoutDashboard,LogOut,Menu,Minus,Package,Plus,Search,Settings,ShieldCheck,Sparkles,Users,Wallet,X} from 'lucide-react';
 import type {LucideIcon} from 'lucide-react';
+import {SocialPage} from './SocialPage';
 import {api} from './api';
 import type {CartLine,CatalogItem,Customer,User} from './types';
 
@@ -14,8 +15,8 @@ function Login({onLogin}:{onLogin:(u:User)=>void}){
 }
 
 function Shell({user,onSignOut}:{user:User;onSignOut:()=>void}){
- const [page,setPage]=useState('order'); const [drawer,setDrawer]=useState(false); const nav:Array<[string,string,LucideIcon]>=[['order','New order',Plus],['bills','Bill summary',ClipboardList],['reports','Reports',FileBarChart],['notifications','Notifications',Bell],...(user.role==='ADMIN'?[['admin','Admin setup',Settings] as [string,string,LucideIcon]]:[])];
- const content=page==='order'?<OrderFlow user={user}/>:page==='notifications'?<Notifications/>:page==='admin'?<Admin/>:<ComingSoon title={page==='bills'?'Bill summary':'Reports'}/>;
+ const [page,setPage]=useState('order'); const [drawer,setDrawer]=useState(false); const nav:Array<[string,string,LucideIcon]>=[['order','New order',Plus],['bills','Bill summary',ClipboardList],['reports','Reports',FileBarChart],['notifications','Notifications',Bell],['social','AI Social',Facebook],...(user.role==='ADMIN'?[['admin','Admin setup',Settings] as [string,string,LucideIcon]]:[])];
+ const content=page==='order'?<OrderFlow user={user}/>:page==='notifications'?<Notifications/>:page==='social'?<SocialPage user={user}/>:page==='admin'?<Admin/>:<ComingSoon title={page==='bills'?'Bill summary':'Reports'}/>;
  return <div className="app-shell"><aside className={drawer?'sidebar open':'sidebar'}><div className="side-head"><div className="brand"><span className="brand-mark small"><Sparkles size={17}/></span><span>SevaSetu</span></div><button className="icon-btn close" onClick={()=>setDrawer(false)}><X/></button></div><div className="shop-card"><div className="shop-logo">AC</div><div><strong>{user.tenantName}</strong><span>{user.role==='ADMIN'?'Platform access':'Owner workspace'}</span></div></div><nav>{nav.map(([id,label,Icon])=><button key={id} className={page===id?'active':''} onClick={()=>{setPage(id);setDrawer(false)}}><Icon size={19}/>{label}{id==='notifications'&&<span className="nav-count">6</span>}</button>)}</nav><button className="signout" onClick={onSignOut}><LogOut size={19}/>Sign out</button></aside>{drawer&&<div className="scrim" onClick={()=>setDrawer(false)}/>}<main className="workspace"><header><button className="icon-btn menu" onClick={()=>setDrawer(true)}><Menu/></button><div><span className="header-kicker">{user.tenantName}</span><strong>{nav.find(n=>n[0]===page)?.[1]}</strong></div><button className="avatar">{user.displayName.split(' ').map(x=>x[0]).slice(0,2).join('')}</button></header>{content}</main></div>
 }
 
