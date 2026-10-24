@@ -810,6 +810,19 @@ function SecureImage({
 export function AdminTenantsPage({ user }: { user: User }) {
   const [tenants, setTenants] = useState<Array<Record<string, unknown>>>([]),
     [open, setOpen] = useState(false),
+    [editingId, setEditingId] = useState<string | null>(null),
+    [error, setError] = useState(""),
+    [branches, setBranches] = useState([
+      {
+        id: "",
+        code: "",
+        documentCode: "L",
+        name: "",
+        address: "",
+        phone: "",
+        active: true,
+      },
+    ]),
     [form, setForm] = useState({
       code: "",
       name: "",
@@ -817,34 +830,68 @@ export function AdminTenantsPage({ user }: { user: User }) {
       domainPrefix: "CS",
       documentCode: "",
       themeKey: "bakery-rose",
+      logoUrl: "",
+      active: true,
       ownerName: "",
       ownerUsername: "",
       ownerPassword: "",
-      branch1: "",
-      branch1Code: "L",
-      branch2: "",
-      branch2Code: "C",
     });
   useEffect(() => {
     api.tenants(user.token).then(setTenants);
   }, [user.token]);
   async function create(e: React.FormEvent) {
     e.preventDefault();
-    const branches = [
-      [form.branch1, form.branch1Code],
-      [form.branch2, form.branch2Code],
-    ]
-      .filter(([name]) => Boolean(name))
-      .map(([name, documentCode]) => ({
-        code: name.replace(/\W/g, "").toUpperCase(),
-        documentCode: documentCode.toUpperCase(),
-        name,
-        address: "",
-        phone: "",
-      }));
-    const t = await api.createTenant({ ...form, branches }, user.token);
-    setTenants((x) => [t, ...x]);
-    setOpen(false);
+    setError("");
+    try {
+      const payload = {
+        ...form,
+        branches: branches.map((b) => ({ ...b, id: b.id || null })),
+      };
+      const t = editingId
+        ? await api.updateTenant(editingId, payload, user.token)
+        : await api.createTenant(payload, user.token);
+      setTenants((x) =>
+        editingId
+          ? x.map((row) => (String(row.id) === editingId ? t : row))
+          : [t, ...x],
+      );
+      setOpen(false);
+      setEditingId(null);
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : "Unable to save company configuration",
+      );
+    }
+  }
+  async function editTenant(id: string) {
+    setError("");
+    const t = await api.tenant(id, user.token);
+    setEditingId(id);
+    setForm({
+      code: String(t.code || ""),
+      name: String(t.name || ""),
+      domain: String(t.domain || "GENERAL"),
+      domainPrefix: String(t.domain_prefix || "AMC"),
+      documentCode: String(t.document_code || ""),
+      themeKey: String(t.theme_key || "service-green"),
+      logoUrl: String(t.logo_url || ""),
+      active: Boolean(t.active),
+      ownerName: "",
+      ownerUsername: "",
+      ownerPassword: "",
+    });
+    setBranches(
+      ((t.branches as Array<Record<string, unknown>>) || []).map((b) => ({
+        id: String(b.id),
+        code: String(b.code),
+        documentCode: String(b.document_code),
+        name: String(b.name),
+        address: String(b.address || ""),
+        phone: String(b.phone || ""),
+        active: Boolean(b.active),
+      })),
+    );
+    setOpen(true);
   }
   return (
     <div className="standard-page">
@@ -857,7 +904,13 @@ export function AdminTenantsPage({ user }: { user: User }) {
             stored in PostgreSQL.
           </p>
         </div>
-        <button className="primary" onClick={() => setOpen(!open)}>
+        <button
+          className="primary"
+          onClick={() => {
+            setEditingId(null);
+            setOpen(!open);
+          }}
+        >
           <Plus /> Onboard company
         </button>
       </div>
@@ -870,20 +923,14 @@ export function AdminTenantsPage({ user }: { user: User }) {
                 "code",
                 "domainPrefix",
                 "documentCode",
-                "ownerName",
-                "ownerUsername",
-                "ownerPassword",
-                "branch1",
-                "branch1Code",
-                "branch2",
-                "branch2Code",
+                "logoUrl",
               ] as const
             ).map((k) => (
               <label key={k}>
                 {k.replace(/([A-Z])/g, " $1")}
                 <input
-                  required={k !== "branch2" && k !== "branch2Code"}
-                  type={k === "ownerPassword" ? "password" : "text"}
+                  required={k !== "logoUrl"}
+                  type="text"
                   value={form[k]}
                   onChange={(e) => setForm({ ...form, [k]: e.target.value })}
                 />
@@ -922,8 +969,204 @@ export function AdminTenantsPage({ user }: { user: User }) {
                 <option value="service-green">Service Green</option>
               </select>
             </label>
+            <label className="switch-label">
+              <input
+                type="checkbox"
+                checked={form.active}
+                onChange={(e) => setForm({ ...form, active: e.target.checked })}
+              />{" "}
+              Company active
+            </label>
+            {!editingId && (
+              <>
+                <label>
+                  Owner name
+                  <input
+                    required
+                    value={form.ownerName}
+                    onChange={(e) =>
+                      setForm({ ...form, ownerName: e.target.value })
+                    }
+                  />
+                </label>
+                <label>
+                  Owner user ID
+                  <input
+                    required
+                    value={form.ownerUsername}
+                    onChange={(e) =>
+                      setForm({ ...form, ownerUsername: e.target.value })
+                    }
+                  />
+                </label>
+                <label>
+                  Owner temporary password
+                  <input
+                    required
+                    minLength={8}
+                    type="password"
+                    value={form.ownerPassword}
+                    onChange={(e) =>
+                      setForm({ ...form, ownerPassword: e.target.value })
+                    }
+                  />
+                </label>
+              </>
+            )}
           </div>
-          <button className="primary">Create company</button>
+          <div className="branch-config-head">
+            <div>
+              <h3>Branches & document codes</h3>
+              <p>The code becomes part of every new bill and kitchen job ID.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                setBranches((x) => [
+                  ...x,
+                  {
+                    id: "",
+                    code: "",
+                    documentCode: "",
+                    name: "",
+                    address: "",
+                    phone: "",
+                    active: true,
+                  },
+                ])
+              }
+            >
+              <Plus /> Add branch
+            </button>
+          </div>
+          <div className="branch-config-list">
+            {branches.map((branch, index) => (
+              <section key={branch.id || index}>
+                <strong>Branch {index + 1}</strong>
+                <div className="form-grid">
+                  <label>
+                    Branch name
+                    <input
+                      required
+                      value={branch.name}
+                      onChange={(e) =>
+                        setBranches((x) =>
+                          x.map((b, i) =>
+                            i === index ? { ...b, name: e.target.value } : b,
+                          ),
+                        )
+                      }
+                    />
+                  </label>
+                  <label>
+                    Operational code
+                    <input
+                      required
+                      value={branch.code}
+                      onChange={(e) =>
+                        setBranches((x) =>
+                          x.map((b, i) =>
+                            i === index
+                              ? { ...b, code: e.target.value.toUpperCase() }
+                              : b,
+                          ),
+                        )
+                      }
+                    />
+                  </label>
+                  <label>
+                    Document code
+                    <input
+                      required
+                      maxLength={8}
+                      value={branch.documentCode}
+                      onChange={(e) =>
+                        setBranches((x) =>
+                          x.map((b, i) =>
+                            i === index
+                              ? {
+                                  ...b,
+                                  documentCode: e.target.value
+                                    .toUpperCase()
+                                    .replace(/[^A-Z0-9]/g, ""),
+                                }
+                              : b,
+                          ),
+                        )
+                      }
+                    />
+                  </label>
+                  <label>
+                    Phone
+                    <input
+                      value={branch.phone}
+                      onChange={(e) =>
+                        setBranches((x) =>
+                          x.map((b, i) =>
+                            i === index ? { ...b, phone: e.target.value } : b,
+                          ),
+                        )
+                      }
+                    />
+                  </label>
+                  <label className="full">
+                    Address
+                    <textarea
+                      value={branch.address}
+                      onChange={(e) =>
+                        setBranches((x) =>
+                          x.map((b, i) =>
+                            i === index ? { ...b, address: e.target.value } : b,
+                          ),
+                        )
+                      }
+                    />
+                  </label>
+                  <label className="switch-label">
+                    <input
+                      type="checkbox"
+                      checked={branch.active}
+                      onChange={(e) =>
+                        setBranches((x) =>
+                          x.map((b, i) =>
+                            i === index
+                              ? { ...b, active: e.target.checked }
+                              : b,
+                          ),
+                        )
+                      }
+                    />{" "}
+                    Active branch
+                  </label>
+                </div>
+              </section>
+            ))}
+          </div>
+          <div className="document-preview">
+            Next IDs will look like{" "}
+            <strong>
+              {form.domainPrefix || "PREFIX"}-{form.documentCode || "SHOP"}
+              {branches[0]?.documentCode || "BRANCH"}-123456
+            </strong>{" "}
+            and{" "}
+            <strong>
+              {form.domainPrefix || "PREFIX"}-{form.documentCode || "SHOP"}
+              {branches[0]?.documentCode || "BRANCH"}-J-123457
+            </strong>
+          </div>
+          {error && <div className="error">{error}</div>}
+          <div className="actions">
+            <button
+              type="button"
+              className="text-btn"
+              onClick={() => setOpen(false)}
+            >
+              Cancel
+            </button>
+            <button className="primary">
+              {editingId ? "Save configuration" : "Create company"}
+            </button>
+          </div>
         </form>
       )}
       <div className="admin-grid">
@@ -940,6 +1183,12 @@ export function AdminTenantsPage({ user }: { user: User }) {
             <small>
               {String(t.domainPrefix)}-{String(t.documentCode)}[BRANCH]-123456
             </small>
+            <button
+              className="tenant-edit"
+              onClick={() => editTenant(String(t.id))}
+            >
+              <SquarePen /> Configure
+            </button>
           </article>
         ))}
       </div>

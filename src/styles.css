@@ -1768,6 +1768,64 @@ h2 {
 .pagination button:disabled {
   opacity: 0.4;
 }
+.branch-config-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin: 26px 0 12px;
+}
+.branch-config-head h3,
+.branch-config-head p {
+  margin: 0 0 4px;
+}
+.branch-config-head p {
+  color: var(--muted);
+  font-size: 12px;
+}
+.branch-config-head button,
+.tenant-edit {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--line);
+  background: white;
+  color: var(--green);
+  padding: 8px 10px;
+  border-radius: 9px;
+  font-weight: 800;
+}
+.branch-config-head svg,
+.tenant-edit svg {
+  width: 15px;
+}
+.branch-config-list {
+  display: grid;
+  gap: 12px;
+}
+.branch-config-list section {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--cream);
+}
+.branch-config-list section > strong {
+  display: block;
+  margin-bottom: 12px;
+}
+.document-preview {
+  margin: 16px 0;
+  padding: 13px;
+  border-radius: 10px;
+  background: var(--mint);
+  color: var(--green);
+}
+.admin-card {
+  position: relative;
+}
+.tenant-edit {
+  margin-top: 12px;
+}
 @media (max-width: 1000px) {
   .team-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -1818,6 +1876,10 @@ h2 {
     flex-direction: column;
   }
   .customer-results button {
+    flex-direction: column;
+  }
+  .branch-config-head {
+    align-items: stretch;
     flex-direction: column;
   }
   .bill-images {

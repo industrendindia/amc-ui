@@ -186,10 +186,18 @@ export const api = {
     ),
   tenants: (token: string) =>
     request<Array<Record<string, unknown>>>("/admin/tenants", {}, token),
+  tenant: (id: string, token: string) =>
+    request<Record<string, unknown>>(`/admin/tenants/${id}`, {}, token),
   createTenant: (payload: unknown, token: string) =>
     request<Record<string, unknown>>(
       "/admin/tenants",
       { method: "POST", body: JSON.stringify(payload) },
+      token,
+    ),
+  updateTenant: (id: string, payload: unknown, token: string) =>
+    request<Record<string, unknown>>(
+      `/admin/tenants/${id}`,
+      { method: "PUT", body: JSON.stringify(payload) },
       token,
     ),
   saveCustomer: async (customer: Customer, token: string) => {
