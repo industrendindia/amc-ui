@@ -326,7 +326,8 @@ export function JobCardsPage({ user }: { user: User }) {
     [employees, setEmployees] = useState<Employee[]>([]),
     [selected, setSelected] = useState<Record<string, unknown> | null>(null),
     [chosen, setChosen] = useState<string[]>([]),
-    [note, setNote] = useState("");
+    [note, setNote] = useState(""),
+    [detailError, setDetailError] = useState("");
   const load = () =>
     Promise.all([api.jobCards(user.token), api.employees(user.token)]).then(
       ([j, e]) => {
@@ -338,9 +339,16 @@ export function JobCardsPage({ user }: { user: User }) {
     load();
   }, [user.token]);
   async function view(id: string) {
-    const d = await api.jobCard(id, user.token);
-    setSelected(d);
-    setChosen(((d.chefs as Array<{ id: string }>) || []).map((x) => x.id));
+    setDetailError("");
+    try {
+      const d = await api.jobCard(id, user.token);
+      setSelected(d);
+      setChosen(((d.chefs as Array<{ id: string }>) || []).map((x) => x.id));
+    } catch (error) {
+      setDetailError(
+        error instanceof Error ? error.message : "Unable to open kitchen job",
+      );
+    }
   }
   async function assign() {
     if (!selected) return;
@@ -422,6 +430,7 @@ export function JobCardsPage({ user }: { user: User }) {
           </section>
         ))}
       </div>
+      {detailError && <div className="error">{detailError}</div>}
       {selected && (
         <div className="bill-drawer job-detail">
           <button className="drawer-close" onClick={() => setSelected(null)}>
@@ -514,6 +523,7 @@ export function BillsPage({ user }: { user: User }) {
     }>({ content: [], totalPages: 0, totalElements: 0 }),
     [expanded, setExpanded] = useState<string | null>(null),
     [detail, setDetail] = useState<Record<string, unknown> | null>(null),
+    [detailError, setDetailError] = useState(""),
     [pay, setPay] = useState({
       amount: "",
       method: "UPI",
@@ -530,7 +540,24 @@ export function BillsPage({ user }: { user: User }) {
       setDetail(null);
     } else {
       setExpanded(id);
-      setDetail(await api.order(id, user.token));
+      setDetailError("");
+      try {
+        const bill = await api.order(id, user.token);
+        setDetail(bill);
+        setPay((current) => ({
+          ...current,
+          amount: String(
+            Math.max(0, Number(bill.total) - Number(bill.amount_paid)),
+          ),
+        }));
+      } catch (error) {
+        setExpanded(null);
+        setDetailError(
+          error instanceof Error
+            ? error.message
+            : "Unable to open bill details",
+        );
+      }
     }
   }
   async function completePayment() {
@@ -728,6 +755,7 @@ export function BillsPage({ user }: { user: User }) {
           );
         })}
       </section>
+      {detailError && <div className="error">{detailError}</div>}
       <div className="pagination">
         <button disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
           Previous
