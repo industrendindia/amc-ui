@@ -1502,6 +1502,210 @@ h2 {
   color: var(--muted);
   margin-top: 4px;
 }
+.search-existing {
+  position: relative;
+}
+.customer-results {
+  position: absolute;
+  inset: calc(100% + 6px) 0 auto;
+  z-index: 8;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 14px 35px rgba(36, 28, 24, 0.14);
+  overflow: hidden;
+}
+.customer-results button {
+  width: 100%;
+  padding: 12px 14px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: white;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.customer-results button:hover {
+  background: var(--mint);
+}
+.customer-results span {
+  color: var(--muted);
+  font-size: 11px;
+}
+.due-field {
+  display: grid;
+  gap: 7px;
+  margin-top: 18px;
+  font-weight: 700;
+}
+.due-field input {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.employee-card {
+  cursor: pointer;
+}
+.employee-card.inactive {
+  opacity: 0.58;
+}
+.switch-label {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+}
+.switch-label input {
+  width: auto;
+}
+.job-card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  color: var(--ink);
+}
+.job-detail h3 {
+  margin: 24px 0 10px;
+}
+.chef-picker {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 12px;
+}
+.chef-picker label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.note-thread {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.note-thread article {
+  padding: 10px;
+  background: var(--cream);
+  border-radius: 10px;
+}
+.note-thread p {
+  margin: 4px 0;
+}
+.note-thread small {
+  color: var(--muted);
+}
+.job-detail textarea {
+  width: 100%;
+  min-height: 88px;
+  margin-bottom: 8px;
+}
+.status-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 20px;
+}
+.status-actions button,
+.pagination button {
+  border: 1px solid var(--line);
+  background: white;
+  padding: 9px 12px;
+  border-radius: 9px;
+}
+.bill-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+.bill-toolbar .searchbox {
+  flex: 1;
+}
+.bill-row {
+  border-top: 1px solid var(--line);
+}
+.bill-row:first-child {
+  border-top: 0;
+}
+.bill-row > button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(150px, 1fr) minmax(
+      130px,
+      0.6fr
+    ) auto auto auto;
+  align-items: center;
+  gap: 13px;
+  text-align: left;
+  border: 0;
+  background: white;
+  padding: 15px 19px;
+  color: var(--ink);
+}
+.bill-row small {
+  display: block;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+.status-pill {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: #fff1d5;
+  color: #96631a;
+}
+.status-pill.paid {
+  background: #e2f3e9;
+  color: var(--green);
+}
+.bill-expanded {
+  padding: 5px 20px 22px 70px;
+  background: #fcfbf8;
+}
+.bill-facts {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+.bill-facts span {
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.bill-facts strong {
+  display: block;
+  color: var(--ink);
+  margin-top: 4px;
+}
+.payment-inline {
+  display: grid;
+  grid-template-columns: 120px 100px 1fr auto;
+  gap: 8px;
+  margin: 18px 0;
+}
+.payment-inline input,
+.payment-inline select {
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+.pagination button:disabled {
+  opacity: 0.4;
+}
 @media (max-width: 1000px) {
   .team-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -1515,8 +1719,33 @@ h2 {
   .job-board {
     grid-template-columns: 1fr;
   }
-  .bill-list > button {
+  .bill-row > button {
     grid-template-columns: auto 1fr auto;
+    padding: 13px;
+  }
+  .bill-row > button > span:nth-child(3),
+  .bill-row > button > strong {
+    display: none;
+  }
+  .bill-expanded {
+    padding: 14px;
+  }
+  .bill-facts {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .payment-inline {
+    grid-template-columns: 1fr 1fr;
+  }
+  .payment-inline input:nth-of-type(2),
+  .payment-inline button {
+    grid-column: 1 / -1;
+  }
+  .bill-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .customer-results button {
+    flex-direction: column;
   }
   .bill-images {
     display: none;

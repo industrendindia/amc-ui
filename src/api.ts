@@ -52,7 +52,9 @@ async function request<T>(
       (await res.json().catch(() => ({ message: "Request failed" }))).message ||
         "Request failed",
     );
-  return res.json();
+  if (res.status === 204) return undefined as T;
+  const text = await res.text();
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 export const api = {
   login: async (username: string, password: string): Promise<User> => {
@@ -95,18 +97,11 @@ export const api = {
     }
   },
   createOrder: async (payload: unknown, token: string) => {
-    try {
-      return await request<{ id: string; billNumber: string }>(
-        "/orders",
-        { method: "POST", body: JSON.stringify(payload) },
-        token,
-      );
-    } catch {
-      return {
-        id: crypto.randomUUID(),
-        billNumber: `AMC-${new Date().getFullYear()}-${String(Date.now()).slice(-5)}`,
-      };
-    }
+    return request<{ id: string; billNumber: string }>(
+      "/orders",
+      { method: "POST", body: JSON.stringify(payload) },
+      token,
+    );
   },
   uploadOrderImages: async (orderId: string, files: File[], token: string) => {
     if (!files.length) return;
@@ -122,8 +117,28 @@ export const api = {
         "Order saved, but reference images could not be uploaded.",
       );
   },
-  orders: (token: string) =>
-    request<Array<Record<string, unknown>>>("/orders", {}, token),
+  orders: (token: string, page = 0, size = 10, q = "") =>
+    request<{
+      content: Array<Record<string, unknown>>;
+      page: number;
+      size: number;
+      totalElements: number;
+      totalPages: number;
+    }>(
+      `/orders?page=${page}&size=${size}&q=${encodeURIComponent(q)}`,
+      {},
+      token,
+    ),
+  order: (id: string, token: string) =>
+    request<Record<string, unknown>>(`/orders/${id}`, {}, token),
+  completePayment: (id: string, payload: unknown, token: string) =>
+    request<Record<string, unknown>>(
+      `/orders/${id}/payments`,
+      { method: "POST", body: JSON.stringify(payload) },
+      token,
+    ),
+  markDelivered: (id: string, token: string) =>
+    request<void>(`/orders/${id}/delivered`, { method: "PATCH" }, token),
   orderImages: (orderId: string, token: string) =>
     request<
       Array<{
@@ -141,12 +156,32 @@ export const api = {
       { method: "POST", body: JSON.stringify(payload) },
       token,
     ),
+  updateEmployee: (id: string, payload: unknown, token: string) =>
+    request<Employee>(
+      `/employees/${id}`,
+      { method: "PUT", body: JSON.stringify(payload) },
+      token,
+    ),
   jobCards: (token: string) =>
     request<Array<Record<string, unknown>>>("/job-cards", {}, token),
-  createJobCard: (payload: unknown, token: string) =>
-    request<Record<string, unknown>>(
-      "/job-cards",
-      { method: "POST", body: JSON.stringify(payload) },
+  jobCard: (id: string, token: string) =>
+    request<Record<string, unknown>>(`/job-cards/${id}`, {}, token),
+  assignChefs: (id: string, employeeIds: string[], token: string) =>
+    request<void>(
+      `/job-cards/${id}/chefs`,
+      { method: "PUT", body: JSON.stringify({ employeeIds }) },
+      token,
+    ),
+  addJobNote: (id: string, note: string, token: string) =>
+    request<void>(
+      `/job-cards/${id}/notes`,
+      { method: "POST", body: JSON.stringify({ note }) },
+      token,
+    ),
+  updateJobStatus: (id: string, status: string, token: string) =>
+    request<void>(
+      `/job-cards/${id}/status?value=${status}`,
+      { method: "PATCH" },
       token,
     ),
   tenants: (token: string) =>
@@ -158,16 +193,14 @@ export const api = {
       token,
     ),
   saveCustomer: async (customer: Customer, token: string) => {
-    try {
-      return await request<Customer>(
-        "/customers",
-        { method: "POST", body: JSON.stringify(customer) },
-        token,
-      );
-    } catch {
-      return { ...customer, id: crypto.randomUUID() };
-    }
+    return request<Customer>(
+      "/customers",
+      { method: "POST", body: JSON.stringify(customer) },
+      token,
+    );
   },
+  searchCustomers: (q: string, token: string) =>
+    request<Customer[]>(`/customers?q=${encodeURIComponent(q)}`, {}, token),
   socialStatus: async (token: string) =>
     request<{ connected: boolean; pageName?: string; pageId?: string }>(
       "/social/facebook/status",

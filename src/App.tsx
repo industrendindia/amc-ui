@@ -288,12 +288,28 @@ function OrderFlow({ user }: { user: User }) {
   const [query, setQuery] = useState("");
   const [type, setType] = useState("ALL");
   const [payment, setPayment] = useState("UPI");
+  const [dueAt, setDueAt] = useState("");
+  const [customerQuery, setCustomerQuery] = useState("");
+  const [customerMatches, setCustomerMatches] = useState<Customer[]>([]);
   const [bill, setBill] = useState("");
   const [references, setReferences] = useState<File[]>([]);
   const [orderNotice, setOrderNotice] = useState("");
   useEffect(() => {
     api.catalog(user.token).then((x) => setItems(x as CatalogItem[]));
   }, [user.token]);
+  useEffect(() => {
+    if (customerQuery.trim().length < 2) {
+      setCustomerMatches([]);
+      return;
+    }
+    const timer = setTimeout(() => {
+      api
+        .searchCustomers(customerQuery, user.token)
+        .then(setCustomerMatches)
+        .catch(() => setCustomerMatches([]));
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [customerQuery, user.token]);
   const subtotal = cart.reduce((s, x) => s + x.price * x.quantity, 0),
     discount = cart.reduce((s, x) => s + x.discount * x.quantity, 0),
     total = Math.max(0, subtotal - discount);
@@ -323,6 +339,7 @@ function OrderFlow({ user }: { user: User }) {
           discount,
         })),
         paymentMethod: payment,
+        dueAt: dueAt ? new Date(dueAt).toISOString() : null,
       },
       user.token,
     );
@@ -366,6 +383,8 @@ function OrderFlow({ user }: { user: User }) {
             setReferences([]);
             setBill("");
             setOrderNotice("");
+            setDueAt("");
+            setCustomerQuery("");
           }}
         >
           Start another order
@@ -414,7 +433,31 @@ function OrderFlow({ user }: { user: User }) {
           </div>
           <div className="search-existing">
             <Search />
-            <input placeholder="Search existing customer by name or mobile" />
+            <input
+              value={customerQuery}
+              onChange={(e) => setCustomerQuery(e.target.value)}
+              placeholder="Search existing customer by name or mobile"
+            />
+            {customerMatches.length > 0 && (
+              <div className="customer-results">
+                {customerMatches.map((match) => (
+                  <button
+                    type="button"
+                    key={match.id}
+                    onClick={() => {
+                      setCustomer(match);
+                      setCustomerQuery("");
+                      setCustomerMatches([]);
+                    }}
+                  >
+                    <strong>{match.name}</strong>
+                    <span>
+                      {match.phone} · {match.address || "Address not saved"}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div className="or">
             <span>or add someone new</span>
@@ -589,6 +632,11 @@ function OrderFlow({ user }: { user: User }) {
                   "No payment",
                   "For complimentary or fully discounted orders",
                 ],
+                [
+                  "PENDING",
+                  "Pay later",
+                  "Create the bill and collect payment later",
+                ],
               ].map(([id, title, sub]) => (
                 <button
                   key={id}
@@ -602,6 +650,14 @@ function OrderFlow({ user }: { user: User }) {
                 </button>
               ))}
             </div>
+            <label className="due-field">
+              Required / delivery date & time
+              <input
+                type="datetime-local"
+                value={dueAt}
+                onChange={(e) => setDueAt(e.target.value)}
+              />
+            </label>
             <div className="payment-note">
               <ShieldCheck />
               <span>
@@ -623,7 +679,9 @@ function OrderFlow({ user }: { user: User }) {
             ))}
             <div className="total">
               <span>Amount to collect</span>
-              <strong>{money(payment === "ZERO" ? 0 : total)}</strong>
+              <strong>
+                {money(payment === "ZERO" || payment === "PENDING" ? 0 : total)}
+              </strong>
             </div>
             <button className="primary wide" onClick={pay}>
               Complete & generate bill

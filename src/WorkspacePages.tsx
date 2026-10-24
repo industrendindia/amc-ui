@@ -4,62 +4,92 @@ import type { Branch, Employee, User } from "./types";
 import {
   CakeSlice,
   ChefHat,
+  ChevronDown,
+  ChevronUp,
   Clock3,
   Image,
-  IndianRupee,
   MapPin,
   Plus,
   ReceiptText,
+  Search,
   UserPlus,
   Users,
 } from "lucide-react";
+
 const money = (n: number) =>
   new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 0,
   }).format(n || 0);
+const date = (v: unknown) =>
+  v ? new Date(String(v)).toLocaleString("en-IN") : "—";
+const blankEmployee = {
+  branchId: "",
+  name: "",
+  username: "",
+  password: "",
+  employeeType: "USER",
+  jobRole: "COUNTER",
+  dateOfJoining: new Date().toISOString().slice(0, 10),
+  hourlyRate: "",
+  monthlySalary: "",
+  active: true,
+  newPassword: "",
+};
+
 export function EmployeesPage({ user }: { user: User }) {
   const [rows, setRows] = useState<Employee[]>([]),
     [branches, setBranches] = useState<Branch[]>([]),
     [open, setOpen] = useState(false),
+    [editing, setEditing] = useState<Employee | null>(null),
     [error, setError] = useState("");
-  const [form, setForm] = useState({
-    branchId: "",
-    name: "",
-    username: "",
-    password: "",
-    employeeType: "USER",
-    jobRole: "COUNTER",
-    dateOfJoining: new Date().toISOString().slice(0, 10),
-    hourlyRate: "",
-    monthlySalary: "",
-  });
-  useEffect(() => {
+  const [form, setForm] = useState(blankEmployee);
+  const load = () =>
     Promise.all([api.employees(user.token), api.branches(user.token)])
       .then(([e, b]) => {
         setRows(e);
         setBranches(b);
-        setForm((f) => ({ ...f, branchId: b[0]?.id || "" }));
+        setForm((f) => ({ ...f, branchId: f.branchId || b[0]?.id || "" }));
       })
       .catch((e) => setError(e.message));
+  useEffect(() => {
+    load();
   }, [user.token]);
-  async function save(e: React.FormEvent) {
-    e.preventDefault();
+  function edit(e: Employee) {
+    setEditing(e);
+    setOpen(true);
+    setForm({
+      ...blankEmployee,
+      ...e,
+      hourlyRate: String(e.hourlyRate || ""),
+      monthlySalary: String(e.monthlySalary || ""),
+      password: "",
+      newPassword: "",
+    });
+  }
+  async function save(event: React.FormEvent) {
+    event.preventDefault();
     setError("");
     try {
-      const employee = await api.createEmployee(
-        {
-          ...form,
-          hourlyRate: form.hourlyRate ? Number(form.hourlyRate) : null,
-          monthlySalary: form.monthlySalary ? Number(form.monthlySalary) : null,
-        },
-        user.token,
+      const payload = {
+        ...form,
+        hourlyRate: form.hourlyRate ? Number(form.hourlyRate) : null,
+        monthlySalary: form.monthlySalary ? Number(form.monthlySalary) : null,
+      };
+      const employee = editing
+        ? await api.updateEmployee(editing.id, payload, user.token)
+        : await api.createEmployee(payload, user.token);
+      setRows((x) =>
+        editing
+          ? x.map((v) => (v.id === employee.id ? employee : v))
+          : [employee, ...x],
       );
-      setRows((x) => [employee, ...x]);
       setOpen(false);
+      setEditing(null);
+      setForm({ ...blankEmployee, branchId: branches[0]?.id || "" });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Unable to add employee");
+      setError(e instanceof Error ? e.message : "Unable to save employee");
     }
   }
   return (
@@ -68,17 +98,25 @@ export function EmployeesPage({ user }: { user: User }) {
         <div>
           <span className="eyebrow">TEAM & ACCESS</span>
           <h1>Employees</h1>
-          <p>Manage secure logins, roles, salaries and branch assignments.</p>
+          <p>
+            Branch-specific logins, roles, joining details and compensation.
+          </p>
         </div>
         {user.role !== "EMPLOYEE" && (
-          <button className="primary" onClick={() => setOpen(!open)}>
-            <UserPlus />
-            Add employee
+          <button
+            className="primary"
+            onClick={() => {
+              setEditing(null);
+              setOpen(!open);
+            }}
+          >
+            <UserPlus /> Add employee
           </button>
         )}
       </div>
       {open && (
         <form className="content-card employee-form" onSubmit={save}>
+          <h2>{editing ? `Edit ${editing.name}` : "Create employee login"}</h2>
           <div className="form-grid">
             <label>
               Name *
@@ -96,28 +134,51 @@ export function EmployeesPage({ user }: { user: User }) {
                 onChange={(e) => setForm({ ...form, branchId: e.target.value })}
               >
                 {branches.map((b) => (
-                  <option value={b.id}>{b.name}</option>
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
                 ))}
               </select>
             </label>
-            <label>
-              User ID *
-              <input
-                required
-                value={form.username}
-                onChange={(e) => setForm({ ...form, username: e.target.value })}
-              />
-            </label>
-            <label>
-              Temporary password *
-              <input
-                required
-                minLength={8}
-                type="password"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-              />
-            </label>
+            {!editing && (
+              <>
+                <label>
+                  User ID *
+                  <input
+                    required
+                    value={form.username}
+                    onChange={(e) =>
+                      setForm({ ...form, username: e.target.value })
+                    }
+                  />
+                </label>
+                <label>
+                  Temporary password *
+                  <input
+                    required
+                    minLength={8}
+                    type="password"
+                    value={form.password}
+                    onChange={(e) =>
+                      setForm({ ...form, password: e.target.value })
+                    }
+                  />
+                </label>
+              </>
+            )}
+            {editing && (
+              <label>
+                New password (optional)
+                <input
+                  minLength={8}
+                  type="password"
+                  value={form.newPassword}
+                  onChange={(e) =>
+                    setForm({ ...form, newPassword: e.target.value })
+                  }
+                />
+              </label>
+            )}
             <label>
               Employee type
               <select
@@ -144,7 +205,7 @@ export function EmployeesPage({ user }: { user: User }) {
                   "SERVICE",
                   "OWNER",
                 ].map((x) => (
-                  <option>{x}</option>
+                  <option key={x}>{x}</option>
                 ))}
               </select>
             </label>
@@ -180,14 +241,41 @@ export function EmployeesPage({ user }: { user: User }) {
                 }
               />
             </label>
+            {editing && (
+              <label className="switch-label">
+                <input
+                  type="checkbox"
+                  checked={form.active}
+                  onChange={(e) =>
+                    setForm({ ...form, active: e.target.checked })
+                  }
+                />{" "}
+                Active login
+              </label>
+            )}
           </div>
           {error && <div className="error">{error}</div>}
-          <button className="primary">Create login</button>
+          <div className="actions">
+            <button
+              type="button"
+              className="text-btn"
+              onClick={() => setOpen(false)}
+            >
+              Cancel
+            </button>
+            <button className="primary">
+              {editing ? "Save changes" : "Create login"}
+            </button>
+          </div>
         </form>
       )}
       <section className="team-grid">
         {rows.map((e) => (
-          <article className="employee-card">
+          <article
+            className={`employee-card ${!e.active ? "inactive" : ""}`}
+            key={e.id}
+            onClick={() => user.role !== "EMPLOYEE" && edit(e)}
+          >
             <div
               className={
                 e.jobRole === "CHEF"
@@ -209,7 +297,9 @@ export function EmployeesPage({ user }: { user: User }) {
             </div>
             <footer>
               <span>
-                Joined {new Date(e.dateOfJoining).toLocaleDateString("en-IN")}
+                {e.active
+                  ? `Joined ${new Date(e.dateOfJoining).toLocaleDateString("en-IN")}`
+                  : "Inactive"}
               </span>
               <strong>
                 {e.monthlySalary
@@ -225,240 +315,423 @@ export function EmployeesPage({ user }: { user: User }) {
     </div>
   );
 }
+
 export function JobCardsPage({ user }: { user: User }) {
   const [cards, setCards] = useState<Array<Record<string, unknown>>>([]),
-    [branches, setBranches] = useState<Branch[]>([]),
     [employees, setEmployees] = useState<Employee[]>([]),
-    [open, setOpen] = useState(false);
-  const [form, setForm] = useState({
-    branchId: "",
-    chefEmployeeId: "",
-    title: "",
-    notes: "",
-    dueAt: "",
-    priority: "NORMAL",
-  });
-  useEffect(() => {
-    Promise.all([
-      api.jobCards(user.token),
-      api.branches(user.token),
-      api.employees(user.token),
-    ]).then(([j, b, e]) => {
-      setCards(j);
-      setBranches(b);
-      setEmployees(e);
-      setForm((f) => ({ ...f, branchId: b[0]?.id || "" }));
-    });
-  }, [user.token]);
-  const chefs = employees.filter(
-    (e) =>
-      e.jobRole === "CHEF" && (!form.branchId || e.branchId === form.branchId),
-  );
-  async function create(e: React.FormEvent) {
-    e.preventDefault();
-    const card = await api.createJobCard(
-      {
-        ...form,
-        chefEmployeeId: form.chefEmployeeId || null,
-        dueAt: form.dueAt ? new Date(form.dueAt).toISOString() : null,
+    [selected, setSelected] = useState<Record<string, unknown> | null>(null),
+    [chosen, setChosen] = useState<string[]>([]),
+    [note, setNote] = useState("");
+  const load = () =>
+    Promise.all([api.jobCards(user.token), api.employees(user.token)]).then(
+      ([j, e]) => {
+        setCards(j);
+        setEmployees(e);
       },
-      user.token,
     );
-    setCards((x) => [card, ...x]);
-    setOpen(false);
+  useEffect(() => {
+    load();
+  }, [user.token]);
+  async function view(id: string) {
+    const d = await api.jobCard(id, user.token);
+    setSelected(d);
+    setChosen(((d.chefs as Array<{ id: string }>) || []).map((x) => x.id));
   }
+  async function assign() {
+    if (!selected) return;
+    await api.assignChefs(String(selected.id), chosen, user.token);
+    await view(String(selected.id));
+    load();
+  }
+  async function addNote() {
+    if (!selected || !note.trim()) return;
+    await api.addJobNote(String(selected.id), note, user.token);
+    setNote("");
+    await view(String(selected.id));
+  }
+  async function status(value: string) {
+    if (!selected) return;
+    await api.updateJobStatus(String(selected.id), value, user.token);
+    await view(String(selected.id));
+    load();
+  }
+  const branchChefs = employees.filter(
+    (e) =>
+      e.active &&
+      e.jobRole === "CHEF" &&
+      (!selected || e.branchId === selected.branch_id),
+  );
   return (
     <div className="standard-page">
       <div className="page-intro">
         <div>
-          <span className="eyebrow">KITCHEN BOARD</span>
-          <h1>Job cards</h1>
-          <p>Turn paid orders into clear assignments for available chefs.</p>
+          <span className="eyebrow">LIVE KITCHEN</span>
+          <h1>Kitchen jobs</h1>
+          <p>
+            Jobs appear automatically from new orders. Assign one or more chefs
+            and keep one shared preparation history.
+          </p>
         </div>
-        <button className="primary" onClick={() => setOpen(!open)}>
-          <Plus />
-          New job card
-        </button>
       </div>
-      {open && (
-        <form className="content-card employee-form" onSubmit={create}>
-          <div className="form-grid">
-            <label>
-              Branch
-              <select
-                value={form.branchId}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    branchId: e.target.value,
-                    chefEmployeeId: "",
-                  })
-                }
-              >
-                {branches.map((b) => (
-                  <option value={b.id}>{b.name}</option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Assign chef
-              <select
-                value={form.chefEmployeeId}
-                onChange={(e) =>
-                  setForm({ ...form, chefEmployeeId: e.target.value })
-                }
-              >
-                <option value="">Keep unassigned</option>
-                {chefs.map((c) => (
-                  <option value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </label>
-            <label className="full">
-              Job title
-              <input
-                required
-                placeholder="e.g. 2 kg chocolate photo cake"
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-              />
-            </label>
-            <label>
-              Due date & time
-              <input
-                type="datetime-local"
-                value={form.dueAt}
-                onChange={(e) => setForm({ ...form, dueAt: e.target.value })}
-              />
-            </label>
-            <label>
-              Priority
-              <select
-                value={form.priority}
-                onChange={(e) => setForm({ ...form, priority: e.target.value })}
-              >
-                <option>NORMAL</option>
-                <option>HIGH</option>
-                <option>URGENT</option>
-              </select>
-            </label>
-            <label className="full">
-              Preparation notes
-              <textarea
-                value={form.notes}
-                onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              />
-            </label>
-          </div>
-          <button className="primary">Create job card</button>
-        </form>
-      )}
       <div className="job-board">
-        {["OPEN", "ASSIGNED", "IN_PROGRESS", "READY"].map((status) => (
-          <section>
+        {["OPEN", "ASSIGNED", "IN_PROGRESS", "READY", "COMPLETED"].map((s) => (
+          <section key={s}>
             <h3>
-              {status.replace("_", " ")}
-              <span>{cards.filter((c) => c.status === status).length}</span>
+              {s.replace("_", " ")}
+              <span>{cards.filter((c) => c.status === s).length}</span>
             </h3>
             {cards
-              .filter((c) => c.status === status)
+              .filter((c) => c.status === s)
               .map((c) => (
-                <article className="job-card">
+                <button
+                  className="job-card"
+                  key={String(c.id)}
+                  onClick={() => view(String(c.id))}
+                >
                   <span
                     className={`priority ${String(c.priority).toLowerCase()}`}
                   >
                     {String(c.priority)}
                   </span>
                   <h4>{String(c.title)}</h4>
-                  <p>{String(c.notes || "No additional notes")}</p>
+                  <p>
+                    {String(c.customer_name || "")} ·{" "}
+                    {String(c.bill_number || "")}
+                  </p>
                   <div>
-                    <MapPin /> {String(c.branchName)}{" "}
+                    <MapPin /> {String(c.branch_name)}
                   </div>
                   <div>
-                    <ChefHat /> {String(c.chefName || "Unassigned")}
+                    <ChefHat /> {String(c.chef_names || "Unassigned")}
                   </div>
-                  {Boolean(c.dueAt) && (
+                  <div>
+                    <Image /> {String(c.reference_image_count || 0)} references
+                  </div>
+                  {Boolean(c.due_at) && (
                     <div>
-                      <Clock3 />{" "}
-                      {new Date(String(c.dueAt)).toLocaleString("en-IN")}
+                      <Clock3 /> {date(c.due_at)}
                     </div>
                   )}
-                </article>
+                </button>
               ))}
           </section>
         ))}
       </div>
-    </div>
-  );
-}
-export function BillsPage({ user }: { user: User }) {
-  const [orders, setOrders] = useState<Array<Record<string, unknown>>>([]),
-    [selected, setSelected] = useState<Record<string, unknown> | null>(null),
-    [images, setImages] = useState<Array<{ id: string; fileName: string }>>([]);
-  useEffect(() => {
-    api.orders(user.token).then(setOrders);
-  }, [user.token]);
-  async function view(o: Record<string, unknown>) {
-    setSelected(o);
-    setImages(await api.orderImages(String(o.id), user.token));
-  }
-  return (
-    <div className="standard-page">
-      <div className="page-intro">
-        <div>
-          <span className="eyebrow">SALES & REFERENCES</span>
-          <h1>Bill summary</h1>
-          <p>Every paid order, branch and customer reference in one place.</p>
-        </div>
-      </div>
-      <section className="content-card bill-list">
-        {orders.map((o) => (
-          <button onClick={() => view(o)}>
-            <span className="bill-icon">
-              <ReceiptText />
-            </span>
-            <span>
-              <strong>{String(o.bill_number || o.billNumber)}</strong>
-              <small>
-                {String(o.customer_name || o.customerName)} ·{" "}
-                {String(o.branch_name || o.branchName || "Main branch")}
-              </small>
-            </span>
-            <span className="bill-images">
-              <Image /> {String(o.reference_image_count || 0)}
-            </span>
-            <strong>{money(Number(o.total))}</strong>
-          </button>
-        ))}
-      </section>
       {selected && (
-        <div className="bill-drawer">
+        <div className="bill-drawer job-detail">
           <button className="drawer-close" onClick={() => setSelected(null)}>
             ×
           </button>
-          <span className="eyebrow">CUSTOMER REFERENCES</span>
-          <h2>{String(selected.bill_number || selected.billNumber)}</h2>
-          {images.length ? (
-            <div className="reference-gallery">
-              {images.map((i) => (
-                <SecureImage
-                  token={user.token}
-                  orderId={String(selected.id)}
-                  image={i}
+          <span className="eyebrow">
+            {String(selected.bill_number || "KITCHEN JOB")}
+          </span>
+          <h2>{String(selected.title)}</h2>
+          <p>
+            {String(selected.customer_name || "")} ·{" "}
+            {String(selected.customer_phone || "")}
+          </p>
+          <h3>Assign available chefs</h3>
+          <div className="chef-picker">
+            {branchChefs.map((c) => (
+              <label key={c.id}>
+                <input
+                  type="checkbox"
+                  checked={chosen.includes(c.id)}
+                  onChange={(e) =>
+                    setChosen((x) =>
+                      e.target.checked
+                        ? [...x, c.id]
+                        : x.filter((id) => id !== c.id),
+                    )
+                  }
                 />
-              ))}
-            </div>
-          ) : (
-            <div className="empty-cart">
-              <Image />
-              <p>No reference images were provided.</p>
-            </div>
-          )}
+                <ChefHat /> {c.name}
+              </label>
+            ))}
+          </div>
+          <button className="primary" onClick={assign}>
+            Save assignment
+          </button>
+          <h3>Customer references</h3>
+          <div className="reference-gallery">
+            {(
+              (selected.images as Array<{ id: string; file_name: string }>) ||
+              []
+            ).map((i) => (
+              <SecureImage
+                key={i.id}
+                token={user.token}
+                orderId={String(selected.order_id)}
+                image={{ id: i.id, fileName: i.file_name }}
+              />
+            ))}
+          </div>
+          <h3>Chef notes</h3>
+          <div className="note-thread">
+            {(
+              (selected.notesHistory as Array<Record<string, unknown>>) || []
+            ).map((n) => (
+              <article key={String(n.id)}>
+                <strong>{String(n.author_name)}</strong>
+                <p>{String(n.note)}</p>
+                <small>{date(n.created_at)}</small>
+              </article>
+            ))}
+          </div>
+          <textarea
+            placeholder="Add a note for the kitchen team"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+          />
+          <button className="primary" onClick={addNote}>
+            Add note
+          </button>
+          <div className="status-actions">
+            {["IN_PROGRESS", "READY", "COMPLETED"].map((s) => (
+              <button key={s} onClick={() => status(s)}>
+                {s.replace("_", " ")}
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>
   );
 }
+
+export function BillsPage({ user }: { user: User }) {
+  const [page, setPage] = useState(0),
+    [query, setQuery] = useState(""),
+    [data, setData] = useState<{
+      content: Array<Record<string, unknown>>;
+      totalPages: number;
+      totalElements: number;
+    }>({ content: [], totalPages: 0, totalElements: 0 }),
+    [expanded, setExpanded] = useState<string | null>(null),
+    [detail, setDetail] = useState<Record<string, unknown> | null>(null),
+    [pay, setPay] = useState({
+      amount: "",
+      method: "UPI",
+      referenceNumber: "",
+    });
+  const load = () => api.orders(user.token, page, 10, query).then(setData);
+  useEffect(() => {
+    const t = setTimeout(load, 250);
+    return () => clearTimeout(t);
+  }, [user.token, page, query]);
+  async function toggle(id: string) {
+    if (expanded === id) {
+      setExpanded(null);
+      setDetail(null);
+    } else {
+      setExpanded(id);
+      setDetail(await api.order(id, user.token));
+    }
+  }
+  async function completePayment() {
+    if (!detail) return;
+    await api.completePayment(
+      String(detail.id),
+      { ...pay, amount: Number(pay.amount) },
+      user.token,
+    );
+    setDetail(await api.order(String(detail.id), user.token));
+    setPay({ ...pay, amount: "" });
+    load();
+  }
+  async function delivered(id: string) {
+    await api.markDelivered(id, user.token);
+    if (detail?.id === id) setDetail(await api.order(id, user.token));
+    load();
+  }
+  return (
+    <div className="standard-page">
+      <div className="page-intro">
+        <div>
+          <span className="eyebrow">BILLS & FULFILMENT</span>
+          <h1>Bill summary</h1>
+          <p>
+            Search, inspect payment history and track every order through
+            delivery.
+          </p>
+        </div>
+      </div>
+      <div className="content-card bill-toolbar">
+        <div className="searchbox">
+          <Search />
+          <input
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(0);
+            }}
+            placeholder="Search bill, customer or mobile"
+          />
+        </div>
+        <strong>{data.totalElements} bills</strong>
+      </div>
+      <section className="content-card bill-list">
+        {data.content.map((o) => {
+          const id = String(o.id),
+            open = expanded === id;
+          return (
+            <article className="bill-row" key={id}>
+              <button onClick={() => toggle(id)}>
+                <span className="bill-icon">
+                  <ReceiptText />
+                </span>
+                <span>
+                  <strong>{String(o.bill_number)}</strong>
+                  <small>
+                    {String(o.customer_name)} · {String(o.customer_phone)}
+                  </small>
+                </span>
+                <span>
+                  <small>Due</small>
+                  <strong>{date(o.due_at)}</strong>
+                </span>
+                <span
+                  className={`status-pill ${String(o.payment_status).toLowerCase()}`}
+                >
+                  {String(o.payment_status)}
+                </span>
+                <strong>{money(Number(o.total))}</strong>
+                {open ? <ChevronUp /> : <ChevronDown />}
+              </button>
+              {open && detail && (
+                <div className="bill-expanded">
+                  <div className="bill-facts">
+                    <span>
+                      Branch<strong>{String(detail.branch_name || "—")}</strong>
+                    </span>
+                    <span>
+                      Created<strong>{date(detail.created_at)}</strong>
+                    </span>
+                    <span>
+                      Completed<strong>{date(detail.completed_at)}</strong>
+                    </span>
+                    <span>
+                      Delivered<strong>{date(detail.delivered_at)}</strong>
+                    </span>
+                    <span>
+                      Paid
+                      <strong>
+                        {money(Number(detail.amount_paid))} /{" "}
+                        {money(Number(detail.total))}
+                      </strong>
+                    </span>
+                  </div>
+                  <h3>Items</h3>
+                  {((detail.items as Array<Record<string, unknown>>) || []).map(
+                    (i) => (
+                      <div className="checkout-line" key={String(i.id)}>
+                        <span>
+                          {String(i.quantity)} × {String(i.description)}
+                        </span>
+                        <strong>
+                          {money(
+                            (Number(i.unit_price) - Number(i.discount)) *
+                              Number(i.quantity),
+                          )}
+                        </strong>
+                      </div>
+                    ),
+                  )}
+                  <h3>Reference images</h3>
+                  <div className="reference-gallery">
+                    {(
+                      (detail.images as Array<{
+                        id: string;
+                        fileName: string;
+                      }>) || []
+                    ).map((i) => (
+                      <SecureImage
+                        key={i.id}
+                        token={user.token}
+                        orderId={id}
+                        image={i}
+                      />
+                    ))}
+                  </div>
+                  <h3>Payments</h3>
+                  {(
+                    (detail.payments as Array<Record<string, unknown>>) || []
+                  ).map((p) => (
+                    <p key={String(p.id)}>
+                      {String(p.method)} · {money(Number(p.amount))} ·{" "}
+                      {date(p.paid_at)}
+                    </p>
+                  ))}
+                  {String(detail.payment_status) !== "PAID" && (
+                    <div className="payment-inline">
+                      <input
+                        type="number"
+                        min="1"
+                        max={Number(detail.total) - Number(detail.amount_paid)}
+                        placeholder="Amount"
+                        value={pay.amount}
+                        onChange={(e) =>
+                          setPay({ ...pay, amount: e.target.value })
+                        }
+                      />
+                      <select
+                        value={pay.method}
+                        onChange={(e) =>
+                          setPay({ ...pay, method: e.target.value })
+                        }
+                      >
+                        <option>UPI</option>
+                        <option>CASH</option>
+                      </select>
+                      <input
+                        placeholder="Transaction reference (optional)"
+                        value={pay.referenceNumber}
+                        onChange={(e) =>
+                          setPay({ ...pay, referenceNumber: e.target.value })
+                        }
+                      />
+                      <button
+                        className="primary"
+                        disabled={!Number(pay.amount)}
+                        onClick={completePayment}
+                      >
+                        Complete payment
+                      </button>
+                    </div>
+                  )}
+                  <button
+                    className="primary"
+                    disabled={String(detail.fulfillment_status) === "DELIVERED"}
+                    onClick={() => delivered(id)}
+                  >
+                    {String(detail.fulfillment_status) === "DELIVERED"
+                      ? "Delivered"
+                      : "Mark delivered"}
+                  </button>
+                </div>
+              )}
+            </article>
+          );
+        })}
+      </section>
+      <div className="pagination">
+        <button disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
+          Previous
+        </button>
+        <span>
+          Page {page + 1} of {Math.max(data.totalPages, 1)}
+        </span>
+        <button
+          disabled={page + 1 >= data.totalPages}
+          onClick={() => setPage((p) => p + 1)}
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function SecureImage({
   token,
   orderId,
@@ -470,15 +743,19 @@ function SecureImage({
 }) {
   const [url, setUrl] = useState("");
   useEffect(() => {
+    let value = "";
     fetch(`/api/orders/${orderId}/reference-images/${image.id}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.blob())
-      .then((b) => setUrl(URL.createObjectURL(b)));
+      .then((b) => {
+        value = URL.createObjectURL(b);
+        setUrl(value);
+      });
     return () => {
-      if (url) URL.revokeObjectURL(url);
+      if (value) URL.revokeObjectURL(value);
     };
-  }, [image.id]);
+  }, [image.id, orderId, token]);
   return url ? (
     <figure>
       <img src={url} alt={image.fileName} />
@@ -488,44 +765,34 @@ function SecureImage({
 }
 
 export function AdminTenantsPage({ user }: { user: User }) {
-  const [tenants, setTenants] = useState<Array<Record<string, unknown>>>([]);
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({
-    code: "",
-    name: "",
-    domain: "BAKERY",
-    themeKey: "bakery-rose",
-    ownerName: "",
-    ownerUsername: "",
-    ownerPassword: "",
-    branch1: "",
-    branch2: "",
-  });
+  const [tenants, setTenants] = useState<Array<Record<string, unknown>>>([]),
+    [open, setOpen] = useState(false),
+    [form, setForm] = useState({
+      code: "",
+      name: "",
+      domain: "BAKERY",
+      themeKey: "bakery-rose",
+      ownerName: "",
+      ownerUsername: "",
+      ownerPassword: "",
+      branch1: "",
+      branch2: "",
+    });
   useEffect(() => {
     api.tenants(user.token).then(setTenants);
   }, [user.token]);
-  async function create(event: React.FormEvent) {
-    event.preventDefault();
-    const branchNames = [form.branch1, form.branch2].filter(Boolean);
-    const created = await api.createTenant(
-      {
-        code: form.code,
-        name: form.name,
-        domain: form.domain,
-        themeKey: form.themeKey,
-        ownerName: form.ownerName,
-        ownerUsername: form.ownerUsername,
-        ownerPassword: form.ownerPassword,
-        branches: branchNames.map((name) => ({
-          code: name.replace(/\W/g, "").toUpperCase(),
-          name,
-          address: "",
-          phone: "",
-        })),
-      },
-      user.token,
-    );
-    setTenants((current) => [created, ...current]);
+  async function create(e: React.FormEvent) {
+    e.preventDefault();
+    const branches = [form.branch1, form.branch2]
+      .filter(Boolean)
+      .map((name) => ({
+        code: name.replace(/\W/g, "").toUpperCase(),
+        name,
+        address: "",
+        phone: "",
+      }));
+    const t = await api.createTenant({ ...form, branches }, user.token);
+    setTenants((x) => [t, ...x]);
     setOpen(false);
   }
   return (
@@ -534,7 +801,10 @@ export function AdminTenantsPage({ user }: { user: User }) {
         <div>
           <span className="eyebrow">PLATFORM ADMINISTRATION</span>
           <h1>Companies & themes</h1>
-          <p>Onboard isolated shops, branches and their first owner account.</p>
+          <p>
+            Each shop has isolated data, branches and a domain-specific theme
+            stored in PostgreSQL.
+          </p>
         </div>
         <button className="primary" onClick={() => setOpen(!open)}>
           <Plus /> Onboard company
@@ -543,22 +813,27 @@ export function AdminTenantsPage({ user }: { user: User }) {
       {open && (
         <form className="content-card employee-form" onSubmit={create}>
           <div className="form-grid">
-            <label>
-              Company name
-              <input
-                required
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-              />
-            </label>
-            <label>
-              Company code
-              <input
-                required
-                value={form.code}
-                onChange={(e) => setForm({ ...form, code: e.target.value })}
-              />
-            </label>
+            {(
+              [
+                "name",
+                "code",
+                "ownerName",
+                "ownerUsername",
+                "ownerPassword",
+                "branch1",
+                "branch2",
+              ] as const
+            ).map((k) => (
+              <label key={k}>
+                {k.replace(/([A-Z])/g, " $1")}
+                <input
+                  required={k !== "branch2"}
+                  type={k === "ownerPassword" ? "password" : "text"}
+                  value={form[k]}
+                  onChange={(e) => setForm({ ...form, [k]: e.target.value })}
+                />
+              </label>
+            ))}
             <label>
               Business domain
               <select
@@ -591,60 +866,13 @@ export function AdminTenantsPage({ user }: { user: User }) {
                 <option value="service-green">Service Green</option>
               </select>
             </label>
-            <label>
-              First branch
-              <input
-                required
-                value={form.branch1}
-                onChange={(e) => setForm({ ...form, branch1: e.target.value })}
-              />
-            </label>
-            <label>
-              Second branch
-              <input
-                value={form.branch2}
-                onChange={(e) => setForm({ ...form, branch2: e.target.value })}
-              />
-            </label>
-            <label>
-              Owner name
-              <input
-                required
-                value={form.ownerName}
-                onChange={(e) =>
-                  setForm({ ...form, ownerName: e.target.value })
-                }
-              />
-            </label>
-            <label>
-              Owner user ID
-              <input
-                required
-                value={form.ownerUsername}
-                onChange={(e) =>
-                  setForm({ ...form, ownerUsername: e.target.value })
-                }
-              />
-            </label>
-            <label>
-              Temporary password
-              <input
-                required
-                minLength={8}
-                type="password"
-                value={form.ownerPassword}
-                onChange={(e) =>
-                  setForm({ ...form, ownerPassword: e.target.value })
-                }
-              />
-            </label>
           </div>
           <button className="primary">Create company</button>
         </form>
       )}
       <div className="admin-grid">
         {tenants.map((t) => (
-          <article className="admin-card">
+          <article className="admin-card" key={String(t.id)}>
             <span>
               <CakeSlice />
             </span>
