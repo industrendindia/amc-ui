@@ -288,9 +288,12 @@ function OrderFlow({ user }: { user: User }) {
   const [query, setQuery] = useState("");
   const [type, setType] = useState("ALL");
   const [payment, setPayment] = useState("UPI");
+  const [partialMethod, setPartialMethod] = useState("UPI");
+  const [partialAmount, setPartialAmount] = useState("");
   const [dueAt, setDueAt] = useState("");
   const [customerQuery, setCustomerQuery] = useState("");
   const [customerMatches, setCustomerMatches] = useState<Customer[]>([]);
+  const [customerSearchError, setCustomerSearchError] = useState("");
   const [bill, setBill] = useState("");
   const [references, setReferences] = useState<File[]>([]);
   const [orderNotice, setOrderNotice] = useState("");
@@ -305,8 +308,28 @@ function OrderFlow({ user }: { user: User }) {
     const timer = setTimeout(() => {
       api
         .searchCustomers(customerQuery, user.token)
-        .then(setCustomerMatches)
-        .catch(() => setCustomerMatches([]));
+        .then((matches) => {
+          setCustomerSearchError("");
+          setCustomerMatches(matches);
+          const exact = matches.find(
+            (match) =>
+              match.phone.replace(/\D/g, "").slice(-10) ===
+              customerQuery.replace(/\D/g, "").slice(-10),
+          );
+          if (exact && customerQuery.replace(/\D/g, "").length === 10)
+            setCustomer({
+              ...exact,
+              address: exact.address || "",
+              dob: exact.dob || "",
+              anniversary: exact.anniversary || "",
+            });
+        })
+        .catch(() => {
+          setCustomerMatches([]);
+          setCustomerSearchError(
+            "Customer lookup is unavailable. Check that the latest backend is running.",
+          );
+        });
     }, 250);
     return () => clearTimeout(timer);
   }, [customerQuery, user.token]);
@@ -338,7 +361,9 @@ function OrderFlow({ user }: { user: User }) {
           quantity,
           discount,
         })),
-        paymentMethod: payment,
+        paymentMethod: payment === "PARTIAL" ? partialMethod : payment,
+        initialPaymentAmount:
+          payment === "PARTIAL" ? Number(partialAmount) : null,
         dueAt: dueAt ? new Date(dueAt).toISOString() : null,
       },
       user.token,
@@ -369,7 +394,15 @@ function OrderFlow({ user }: { user: User }) {
         {orderNotice && <div className="error">{orderNotice}</div>}
         <div className="receipt">
           <span>Amount paid</span>
-          <strong>{money(total)}</strong>
+          <strong>
+            {money(
+              payment === "PENDING" || payment === "ZERO"
+                ? 0
+                : payment === "PARTIAL"
+                  ? Number(partialAmount)
+                  : total,
+            )}
+          </strong>
           <span>
             {payment} · {new Date().toLocaleDateString("en-IN")}
           </span>
@@ -385,6 +418,7 @@ function OrderFlow({ user }: { user: User }) {
             setOrderNotice("");
             setDueAt("");
             setCustomerQuery("");
+            setPartialAmount("");
           }}
         >
           Start another order
@@ -445,7 +479,12 @@ function OrderFlow({ user }: { user: User }) {
                     type="button"
                     key={match.id}
                     onClick={() => {
-                      setCustomer(match);
+                      setCustomer({
+                        ...match,
+                        address: match.address || "",
+                        dob: match.dob || "",
+                        anniversary: match.anniversary || "",
+                      });
                       setCustomerQuery("");
                       setCustomerMatches([]);
                     }}
@@ -459,6 +498,9 @@ function OrderFlow({ user }: { user: User }) {
               </div>
             )}
           </div>
+          {customerSearchError && (
+            <div className="error">{customerSearchError}</div>
+          )}
           <div className="or">
             <span>or add someone new</span>
           </div>
@@ -468,9 +510,10 @@ function OrderFlow({ user }: { user: User }) {
               <input
                 required
                 value={customer.name}
-                onChange={(e) =>
-                  setCustomer({ ...customer, name: e.target.value })
-                }
+                onChange={(e) => {
+                  setCustomer({ ...customer, name: e.target.value });
+                  setCustomerQuery(e.target.value);
+                }}
                 placeholder="Customer's full name"
               />
             </label>
@@ -482,12 +525,13 @@ function OrderFlow({ user }: { user: User }) {
                   required
                   pattern="[0-9]{10}"
                   value={customer.phone}
-                  onChange={(e) =>
-                    setCustomer({
-                      ...customer,
-                      phone: e.target.value.replace(/\D/g, "").slice(0, 10),
-                    })
-                  }
+                  onChange={(e) => {
+                    const phone = e.target.value
+                      .replace(/\D/g, "")
+                      .slice(0, 10);
+                    setCustomer({ ...customer, phone });
+                    setCustomerQuery(phone);
+                  }}
                   placeholder="10-digit number"
                 />
               </div>
@@ -637,6 +681,11 @@ function OrderFlow({ user }: { user: User }) {
                   "Pay later",
                   "Create the bill and collect payment later",
                 ],
+                [
+                  "PARTIAL",
+                  "Partial payment",
+                  "Collect an advance and retain the balance on the bill",
+                ],
               ].map(([id, title, sub]) => (
                 <button
                   key={id}
@@ -650,6 +699,34 @@ function OrderFlow({ user }: { user: User }) {
                 </button>
               ))}
             </div>
+            {payment === "PARTIAL" && (
+              <div className="partial-payment">
+                <label>
+                  Advance amount
+                  <input
+                    type="number"
+                    min="1"
+                    max={Math.max(total - 1, 1)}
+                    value={partialAmount}
+                    onChange={(e) => setPartialAmount(e.target.value)}
+                    placeholder="Amount received"
+                  />
+                </label>
+                <label>
+                  Method
+                  <select
+                    value={partialMethod}
+                    onChange={(e) => setPartialMethod(e.target.value)}
+                  >
+                    <option>UPI</option>
+                    <option>CASH</option>
+                  </select>
+                </label>
+                <span>
+                  Balance: {money(Math.max(0, total - Number(partialAmount)))}
+                </span>
+              </div>
+            )}
             <label className="due-field">
               Required / delivery date & time
               <input
@@ -680,10 +757,23 @@ function OrderFlow({ user }: { user: User }) {
             <div className="total">
               <span>Amount to collect</span>
               <strong>
-                {money(payment === "ZERO" || payment === "PENDING" ? 0 : total)}
+                {money(
+                  payment === "ZERO" || payment === "PENDING"
+                    ? 0
+                    : payment === "PARTIAL"
+                      ? Number(partialAmount)
+                      : total,
+                )}
               </strong>
             </div>
-            <button className="primary wide" onClick={pay}>
+            <button
+              className="primary wide"
+              disabled={
+                payment === "PARTIAL" &&
+                (!Number(partialAmount) || Number(partialAmount) >= total)
+              }
+              onClick={pay}
+            >
               Complete & generate bill
               <ChevronRight />
             </button>

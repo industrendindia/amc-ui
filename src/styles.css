@@ -1545,7 +1545,26 @@ h2 {
   border-radius: 10px;
 }
 .employee-card {
-  cursor: pointer;
+  position: relative;
+}
+.employee-edit {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--line);
+  background: white;
+  color: var(--green);
+  padding: 6px 9px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 800;
+}
+.employee-edit svg {
+  width: 14px;
+  height: 14px;
 }
 .employee-card.inactive {
   opacity: 0.58;
@@ -1631,13 +1650,12 @@ h2 {
 .bill-row:first-child {
   border-top: 0;
 }
-.bill-row > button {
+.bill-row > button:first-child {
   width: 100%;
   display: grid;
-  grid-template-columns: auto minmax(150px, 1fr) minmax(
-      130px,
-      0.6fr
-    ) auto auto auto;
+  grid-template-columns:
+    auto minmax(150px, 1fr) minmax(130px, 0.6fr)
+    auto auto auto;
   align-items: center;
   gap: 13px;
   text-align: left;
@@ -1645,6 +1663,50 @@ h2 {
   background: white;
   padding: 15px 19px;
   color: var(--ink);
+}
+.bill-row {
+  position: relative;
+}
+.bill-row .row-deliver {
+  position: absolute;
+  right: 58px;
+  bottom: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 800;
+  z-index: 2;
+}
+.bill-row .row-deliver:disabled {
+  color: var(--muted);
+}
+.partial-payment {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: end;
+  padding: 15px;
+  margin-top: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--cream);
+}
+.partial-payment label {
+  display: grid;
+  gap: 6px;
+  font-weight: 700;
+}
+.partial-payment input,
+.partial-payment select {
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: white;
+}
+.partial-payment span {
+  grid-column: 1 / -1;
+  color: var(--muted);
 }
 .bill-row small {
   display: block;
@@ -1719,13 +1781,24 @@ h2 {
   .job-board {
     grid-template-columns: 1fr;
   }
-  .bill-row > button {
+  .bill-row > button:first-child {
     grid-template-columns: auto 1fr auto;
     padding: 13px;
   }
-  .bill-row > button > span:nth-child(3),
-  .bill-row > button > strong {
+  .bill-row > button:first-child > span:nth-child(3),
+  .bill-row > button:first-child > strong {
     display: none;
+  }
+  .bill-row .row-deliver {
+    position: static;
+    margin: 0 14px 10px auto;
+    display: block;
+    border: 1px solid var(--line);
+    padding: 7px 10px;
+    border-radius: 8px;
+  }
+  .partial-payment {
+    grid-template-columns: 1fr;
   }
   .bill-expanded {
     padding: 14px;

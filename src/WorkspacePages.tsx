@@ -12,6 +12,7 @@ import {
   Plus,
   ReceiptText,
   Search,
+  SquarePen,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -274,8 +275,12 @@ export function EmployeesPage({ user }: { user: User }) {
           <article
             className={`employee-card ${!e.active ? "inactive" : ""}`}
             key={e.id}
-            onClick={() => user.role !== "EMPLOYEE" && edit(e)}
           >
+            {user.role !== "EMPLOYEE" && (
+              <button className="employee-edit" onClick={() => edit(e)}>
+                <SquarePen /> Edit
+              </button>
+            )}
             <div
               className={
                 e.jobRole === "CHEF"
@@ -597,6 +602,15 @@ export function BillsPage({ user }: { user: User }) {
                 </span>
                 <strong>{money(Number(o.total))}</strong>
                 {open ? <ChevronUp /> : <ChevronDown />}
+              </button>
+              <button
+                className="row-deliver"
+                disabled={String(o.fulfillment_status) === "DELIVERED"}
+                onClick={() => delivered(id)}
+              >
+                {String(o.fulfillment_status) === "DELIVERED"
+                  ? "Delivered"
+                  : "Mark delivered"}
               </button>
               {open && detail && (
                 <div className="bill-expanded">
