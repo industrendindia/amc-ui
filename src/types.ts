@@ -29,6 +29,7 @@ export type CartLine = CatalogItem & { quantity: number; discount: number };
 export type Branch = {
   id: string;
   code: string;
+  documentCode: string;
   name: string;
   address: string;
   phone?: string;

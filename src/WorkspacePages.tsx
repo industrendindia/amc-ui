@@ -408,7 +408,7 @@ export function JobCardsPage({ user }: { user: User }) {
                   </span>
                   <h4>{String(c.title)}</h4>
                   <p>
-                    {String(c.customer_name || "")} ·{" "}
+                    {String(c.job_number || "Kitchen job")} ·{" "}
                     {String(c.bill_number || "")}
                   </p>
                   <div>
@@ -437,7 +437,8 @@ export function JobCardsPage({ user }: { user: User }) {
             ×
           </button>
           <span className="eyebrow">
-            {String(selected.bill_number || "KITCHEN JOB")}
+            {String(selected.job_number || "KITCHEN JOB")} · Bill{" "}
+            {String(selected.bill_number || "—")}
           </span>
           <h2>{String(selected.title)}</h2>
           <p>
@@ -813,22 +814,30 @@ export function AdminTenantsPage({ user }: { user: User }) {
       code: "",
       name: "",
       domain: "BAKERY",
+      domainPrefix: "CS",
+      documentCode: "",
       themeKey: "bakery-rose",
       ownerName: "",
       ownerUsername: "",
       ownerPassword: "",
       branch1: "",
+      branch1Code: "L",
       branch2: "",
+      branch2Code: "C",
     });
   useEffect(() => {
     api.tenants(user.token).then(setTenants);
   }, [user.token]);
   async function create(e: React.FormEvent) {
     e.preventDefault();
-    const branches = [form.branch1, form.branch2]
-      .filter(Boolean)
-      .map((name) => ({
+    const branches = [
+      [form.branch1, form.branch1Code],
+      [form.branch2, form.branch2Code],
+    ]
+      .filter(([name]) => Boolean(name))
+      .map(([name, documentCode]) => ({
         code: name.replace(/\W/g, "").toUpperCase(),
+        documentCode: documentCode.toUpperCase(),
         name,
         address: "",
         phone: "",
@@ -859,17 +868,21 @@ export function AdminTenantsPage({ user }: { user: User }) {
               [
                 "name",
                 "code",
+                "domainPrefix",
+                "documentCode",
                 "ownerName",
                 "ownerUsername",
                 "ownerPassword",
                 "branch1",
+                "branch1Code",
                 "branch2",
+                "branch2Code",
               ] as const
             ).map((k) => (
               <label key={k}>
                 {k.replace(/([A-Z])/g, " $1")}
                 <input
-                  required={k !== "branch2"}
+                  required={k !== "branch2" && k !== "branch2Code"}
                   type={k === "ownerPassword" ? "password" : "text"}
                   value={form[k]}
                   onChange={(e) => setForm({ ...form, [k]: e.target.value })}
@@ -884,6 +897,7 @@ export function AdminTenantsPage({ user }: { user: User }) {
                   setForm({
                     ...form,
                     domain: e.target.value,
+                    domainPrefix: e.target.value === "BAKERY" ? "CS" : "AMC",
                     themeKey:
                       e.target.value === "BAKERY"
                         ? "bakery-rose"
@@ -922,6 +936,9 @@ export function AdminTenantsPage({ user }: { user: User }) {
             <small>
               {String(t.domain)} · {String(t.branches)} branches ·{" "}
               {String(t.employees)} employees
+            </small>
+            <small>
+              {String(t.domainPrefix)}-{String(t.documentCode)}[BRANCH]-123456
             </small>
           </article>
         ))}
