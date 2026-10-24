@@ -184,7 +184,9 @@ function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
     ["order", "New order", Plus],
     ["bills", "Bill summary", ClipboardList],
     ["jobs", user.domain === "BAKERY" ? "Kitchen jobs" : "Job cards", ChefHat],
-    ["employees", "Employees", Users],
+    ...(user.role === "EMPLOYEE"
+      ? []
+      : [["employees", "Employees", Users] as [string, string, LucideIcon]]),
     ["reports", "Reports", FileBarChart],
     ["notifications", "Notifications", Bell],
     ["social", "AI Social", Facebook],
