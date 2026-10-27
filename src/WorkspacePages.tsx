@@ -539,7 +539,9 @@ export function BillsPage({ user }: { user: User }) {
       amount: "",
       method: "UPI",
       referenceNumber: "",
-    });
+    }),
+    [deliveredFiles, setDeliveredFiles] = useState<File[]>([]),
+    [mediaNotice, setMediaNotice] = useState("");
   const load = () => api.orders(user.token, page, 10, query).then(setData);
   useEffect(() => {
     const t = setTimeout(load, 250);
@@ -581,6 +583,24 @@ export function BillsPage({ user }: { user: User }) {
     setDetail(await api.order(String(detail.id), user.token));
     setPay({ ...pay, amount: "" });
     load();
+  }
+  async function addDeliveredMedia() {
+    if (!detail || !deliveredFiles.length) return;
+    setMediaNotice("");
+    try {
+      await api.uploadDeliveryMedia(
+        String(detail.id),
+        deliveredFiles,
+        user.token,
+      );
+      setDetail(await api.order(String(detail.id), user.token));
+      setDeliveredFiles([]);
+      setMediaNotice("Delivery images or reels saved.");
+    } catch (error) {
+      setMediaNotice(
+        error instanceof Error ? error.message : "Unable to upload media",
+      );
+    }
   }
   async function requestOtp(id = delivery.id) {
     setDelivery((current) => ({
@@ -717,6 +737,9 @@ export function BillsPage({ user }: { user: User }) {
                       Created<strong>{date(detail.created_at)}</strong>
                     </span>
                     <span>
+                      Due<strong>{date(detail.due_at)}</strong>
+                    </span>
+                    <span>
                       Completed<strong>{date(detail.completed_at)}</strong>
                     </span>
                     <span>
@@ -727,6 +750,17 @@ export function BillsPage({ user }: { user: User }) {
                       <strong>
                         {money(Number(detail.amount_paid))} /{" "}
                         {money(Number(detail.total))}
+                      </strong>
+                    </span>
+                    <span>
+                      Pending
+                      <strong>
+                        {money(
+                          Math.max(
+                            0,
+                            Number(detail.total) - Number(detail.amount_paid),
+                          ),
+                        )}
                       </strong>
                     </span>
                   </div>
@@ -773,6 +807,14 @@ export function BillsPage({ user }: { user: User }) {
                   ))}
                   {String(detail.payment_status) !== "PAID" && (
                     <div className="payment-inline">
+                      <strong className="payment-inline-title">
+                        Complete payment · pending {money(
+                          Math.max(
+                            0,
+                            Number(detail.total) - Number(detail.amount_paid),
+                          ),
+                        )}
+                      </strong>
                       <input
                         type="number"
                         min="1"
@@ -806,6 +848,42 @@ export function BillsPage({ user }: { user: User }) {
                       >
                         Complete payment
                       </button>
+                    </div>
+                  )}
+                  {String(detail.fulfillment_status) === "DELIVERED" && (
+                    <div className="delivered-media-upload">
+                      <h3>Delivery images or reels</h3>
+                      <p>
+                        {(
+                          (detail.deliveryMedia as Array<unknown>) || []
+                        ).length} files saved with this bill.
+                      </p>
+                      <label className="delivery-upload">
+                        <Upload />
+                        <strong>Add images or reels</strong>
+                        <small>Up to 10 files · images 5 MB · reels 30 MB</small>
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*,video/*"
+                          onChange={(e) =>
+                            setDeliveredFiles(Array.from(e.target.files || []))
+                          }
+                        />
+                        <span>
+                          {deliveredFiles.length
+                            ? `${deliveredFiles.length} selected`
+                            : "Choose files"}
+                        </span>
+                      </label>
+                      <button
+                        className="primary"
+                        disabled={!deliveredFiles.length}
+                        onClick={addDeliveredMedia}
+                      >
+                        Upload delivery media
+                      </button>
+                      {mediaNotice && <div className="social-message">{mediaNotice}</div>}
                     </div>
                   )}
                   <button
@@ -901,7 +979,7 @@ export function BillsPage({ user }: { user: User }) {
                 </button>
                 <label className="delivery-upload">
                   <Upload />
-                  <strong>Add delivered cake images or reels</strong>
+                  <strong>Add delivery images or reels</strong>
                   <small>Up to 10 files · images 5 MB · reels 30 MB</small>
                   <input
                     type="file"
@@ -970,6 +1048,7 @@ function SecureImage({
 
 export function AdminTenantsPage({ user }: { user: User }) {
   const [tenants, setTenants] = useState<Array<Record<string, unknown>>>([]),
+    [logoFile, setLogoFile] = useState<File | null>(null),
     [open, setOpen] = useState(false),
     [editingId, setEditingId] = useState<string | null>(null),
     [error, setError] = useState(""),
@@ -994,6 +1073,7 @@ export function AdminTenantsPage({ user }: { user: User }) {
       logoUrl: "",
       active: true,
       facebookSocialEnabled: false,
+      whatsappEnabled: false,
       ownerName: "",
       ownerUsername: "",
       ownerPassword: "",
@@ -1012,6 +1092,10 @@ export function AdminTenantsPage({ user }: { user: User }) {
       const t = editingId
         ? await api.updateTenant(editingId, payload, user.token)
         : await api.createTenant(payload, user.token);
+      if (logoFile) {
+        await api.uploadTenantLogo(String(t.id), logoFile, user.token);
+        Object.assign(t, { logoAvailable: true });
+      }
       setTenants((x) =>
         editingId
           ? x.map((row) => (String(row.id) === editingId ? t : row))
@@ -1019,6 +1103,7 @@ export function AdminTenantsPage({ user }: { user: User }) {
       );
       setOpen(false);
       setEditingId(null);
+      setLogoFile(null);
     } catch (e) {
       setError(
         e instanceof Error ? e.message : "Unable to save company configuration",
@@ -1039,6 +1124,7 @@ export function AdminTenantsPage({ user }: { user: User }) {
       logoUrl: String(t.logo_url || ""),
       active: Boolean(t.active),
       facebookSocialEnabled: Boolean(t.facebook_social_enabled),
+      whatsappEnabled: Boolean(t.whatsapp_enabled),
       ownerName: "",
       ownerUsername: "",
       ownerPassword: "",
@@ -1081,24 +1167,27 @@ export function AdminTenantsPage({ user }: { user: User }) {
         <form className="content-card employee-form" onSubmit={create}>
           <div className="form-grid">
             {(
-              [
-                "name",
-                "code",
-                "domainPrefix",
-                "documentCode",
-                "logoUrl",
-              ] as const
+              ["name", "code", "domainPrefix", "documentCode"] as const
             ).map((k) => (
               <label key={k}>
                 {k.replace(/([A-Z])/g, " $1")}
                 <input
-                  required={k !== "logoUrl"}
+                  required
                   type="text"
                   value={form[k]}
                   onChange={(e) => setForm({ ...form, [k]: e.target.value })}
                 />
               </label>
             ))}
+            <label>
+              Shop logo
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
+              />
+              <small>Stored securely in PostgreSQL · maximum 2 MB</small>
+            </label>
             <label>
               Business domain
               <select
@@ -1149,6 +1238,16 @@ export function AdminTenantsPage({ user }: { user: User }) {
                 }
               />
               Facebook / AI Social package purchased
+            </label>
+            <label className="switch-label feature-toggle">
+              <input
+                type="checkbox"
+                checked={form.whatsappEnabled}
+                onChange={(e) =>
+                  setForm({ ...form, whatsappEnabled: e.target.checked })
+                }
+              />
+              WhatsApp package purchased
             </label>
             {!editingId && (
               <>

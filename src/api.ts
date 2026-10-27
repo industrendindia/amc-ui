@@ -128,6 +128,14 @@ export const api = {
       totalPages: number;
       totalElements: number;
     }>(`/owner/notifications/customers?page=${page}`, {}, token),
+  notificationTodayCount: (token: string) =>
+    request<{ count: number }>("/owner/notifications/today-count", {}, token),
+  notificationsToday: (token: string) =>
+    request<Array<Record<string, unknown>>>(
+      "/owner/notifications/today",
+      {},
+      token,
+    ),
   sendCustomerNotification: (payload: unknown, token: string) =>
     request<Record<string, unknown>>(
       "/owner/notifications/send",
@@ -291,6 +299,30 @@ export const api = {
       { method: "PUT", body: JSON.stringify(payload) },
       token,
     ),
+  uploadTenantLogo: async (id: string, file: File, token: string) => {
+    const body = new FormData();
+    body.append("file", file);
+    const res = await fetch(`/api/admin/tenants/${id}/logo`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body,
+    });
+    if (!res.ok)
+      throw new Error(
+        (await res.json().catch(() => ({ message: "Logo upload failed" })))
+          .message || "Logo upload failed",
+      );
+  },
+  tenantLogo: async (token: string) => {
+    const res = await fetch("/api/tenant/logo", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        ...(adminTenantContext ? { "X-Tenant-Id": adminTenantContext } : {}),
+      },
+    });
+    if (!res.ok) throw new Error("Shop logo is not configured");
+    return res.blob();
+  },
   saveCustomer: async (customer: Customer, token: string) => {
     return request<Customer>(
       "/customers",

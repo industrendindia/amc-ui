@@ -250,6 +250,7 @@ export function NotificationsPage({ user }: { user: User }) {
       totalElements: number;
     }>({ content: [], totalPages: 0, totalElements: 0 }),
     [page, setPage] = useState(0),
+    [today, setToday] = useState<Array<Record<string, unknown>>>([]),
     [selected, setSelected] = useState<string[]>([]),
     [message, setMessage] = useState(
       "We miss you! Contact us for your next order or service.",
@@ -259,9 +260,11 @@ export function NotificationsPage({ user }: { user: User }) {
     Promise.all([
       api.notificationSettings(user.token),
       api.premiumCustomers(page, user.token),
-    ]).then(([s, c]) => {
+      api.notificationsToday(user.token),
+    ]).then(([s, c, current]) => {
       setSettings(s);
       setData(c);
+      setToday(current);
     });
   useEffect(() => {
     load();
@@ -331,6 +334,7 @@ export function NotificationsPage({ user }: { user: User }) {
           <label>
             WhatsApp shop number
             <input
+              disabled={!user.whatsappEnabled}
               value={String(settings.whatsappNumber || "")}
               onChange={(e) =>
                 setSettings({ ...settings, whatsappNumber: e.target.value })
@@ -354,6 +358,7 @@ export function NotificationsPage({ user }: { user: User }) {
           <label className="switch-label">
             <input
               type="checkbox"
+              disabled={!user.whatsappEnabled}
               checked={Boolean(settings.whatsappEnabled)}
               onChange={(e) =>
                 setSettings({ ...settings, whatsappEnabled: e.target.checked })
@@ -366,10 +371,35 @@ export function NotificationsPage({ user }: { user: User }) {
           className={`integration-state ${settings.whatsappEnabled ? "connected" : ""}`}
         >
           <Bell />{" "}
-          {settings.whatsappEnabled
+          {!user.whatsappEnabled
+            ? "WhatsApp package is not enabled for this shop. Contact the administrator."
+            : settings.whatsappEnabled
             ? "WhatsApp enabled"
             : "WhatsApp not enabled — reminders will be saved without showing an error."}
         </div>
+      </section>
+      <section className="content-card notification-list today-notifications">
+        <div className="list-head">
+          <div>
+            <h2>Today’s notifications</h2>
+            <p>{today.length} reminders and messages scheduled today</p>
+          </div>
+        </div>
+        {today.length === 0 ? (
+          <p className="empty-state">No notifications are due today.</p>
+        ) : (
+          today.map((item) => (
+            <div className="notification-row" key={String(item.id)}>
+              <span className="notice-icon renewal"><Bell /></span>
+              <span>
+                <strong>{String(item.customer_name)}</strong>
+                <small>{String(item.kind).replaceAll("_", " ")} · {String(item.phone)}</small>
+                <small>{String(item.message)}</small>
+              </span>
+              <span className="status-pill">{String(item.status)}</span>
+            </div>
+          ))
+        )}
       </section>
       <section className="content-card notification-list">
         <div className="list-head">
@@ -559,7 +589,9 @@ export function IntegrationsPage({ user }: { user: User }) {
           <Bell />
           <h2>WhatsApp</h2>
           <p>
-            {settings.whatsappEnabled
+            {!user.whatsappEnabled
+              ? "WhatsApp package not purchased"
+              : settings.whatsappEnabled
               ? `Enabled for ${String(settings.whatsappNumber || "")}`
               : "Not enabled. Notifications remain safely queued."}
           </p>

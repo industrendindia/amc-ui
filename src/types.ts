@@ -8,6 +8,8 @@ export type User = {
   themeKey?: string;
   branchName?: string;
   facebookSocialEnabled?: boolean;
+  whatsappEnabled?: boolean;
+  logoAvailable?: boolean;
 };
 export type Customer = {
   id?: string;

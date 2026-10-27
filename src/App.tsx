@@ -187,6 +187,8 @@ function Login({ onLogin }: { onLogin: (u: User) => void }) {
 function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
   const [page, setPage] = useState(user.role === "ADMIN" ? "admin" : "order");
   const [drawer, setDrawer] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [shopLogoUrl, setShopLogoUrl] = useState("");
   const [adminTenants, setAdminTenants] = useState<
     Array<Record<string, unknown>>
   >([]);
@@ -204,6 +206,8 @@ function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
         domain: String(selectedTenant.domain),
         themeKey: String(selectedTenant.themeKey),
         facebookSocialEnabled: Boolean(selectedTenant.facebookSocialEnabled),
+        whatsappEnabled: Boolean(selectedTenant.whatsappEnabled),
+        logoAvailable: Boolean(selectedTenant.logoAvailable),
       }
     : user;
   useEffect(() => {
@@ -218,6 +222,26 @@ function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
       setPage("admin");
     }
   }, [selectedTenantId]);
+  useEffect(() => {
+    if (!workspaceUser.tenantName || user.role === "EMPLOYEE") return;
+    api.notificationTodayCount(user.token)
+      .then((result) => setNotificationCount(Number(result.count) || 0))
+      .catch(() => setNotificationCount(0));
+  }, [user.token, selectedTenantId, page]);
+  useEffect(() => {
+    let url = "";
+    setShopLogoUrl("");
+    if (!workspaceUser.logoAvailable) return;
+    api.tenantLogo(user.token)
+      .then((blob) => {
+        url = URL.createObjectURL(blob);
+        setShopLogoUrl(url);
+      })
+      .catch(() => setShopLogoUrl(""));
+    return () => {
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [user.token, selectedTenantId, workspaceUser.logoAvailable]);
   const workspaceNav: Array<[string, string, LucideIcon]> = [
     ["order", "New order", Plus],
     ["bills", "Bill summary", ClipboardList],
@@ -298,7 +322,17 @@ function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
           </button>
         </div>
         <div className="shop-card">
-          <div className="shop-logo">AC</div>
+          <div className="shop-logo">
+            {shopLogoUrl ? (
+              <img src={shopLogoUrl} alt="" />
+            ) : (
+              workspaceUser.tenantName
+                .split(" ")
+                .map((word) => word[0])
+                .slice(0, 2)
+                .join("")
+            )}
+          </div>
           <div>
             <strong>{workspaceUser.tenantName}</strong>
             <span>
@@ -334,7 +368,9 @@ function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
             >
               <Icon size={19} />
               {label}
-              {id === "notifications" && <span className="nav-count">6</span>}
+              {id === "notifications" && notificationCount > 0 && (
+                <span className="nav-count">{notificationCount}</span>
+              )}
             </button>
           ))}
         </nav>
@@ -789,10 +825,10 @@ function OrderFlow({ user }: { user: User }) {
             {payment === "PARTIAL" && (
               <div className="partial-payment">
                 <label>
-                  Advance amount
+                  Amount paid now (₹0 allowed)
                   <input
                     type="number"
-                    min="1"
+                    min="0"
                     max={Math.max(total - 1, 1)}
                     value={partialAmount}
                     onChange={(e) => setPartialAmount(e.target.value)}
@@ -842,7 +878,7 @@ function OrderFlow({ user }: { user: User }) {
               </div>
             ))}
             <div className="total">
-              <span>Amount to collect</span>
+              <span>Amount paid now</span>
               <strong>
                 {money(
                   payment === "ZERO" || payment === "PENDING"
@@ -853,11 +889,31 @@ function OrderFlow({ user }: { user: User }) {
                 )}
               </strong>
             </div>
+            <div className="totals payment-balance-summary">
+              <div>
+                <span>Total bill amount</span>
+                <strong>{money(total)}</strong>
+              </div>
+              <div>
+                <span>Pending after payment</span>
+                <strong>
+                  {money(
+                    payment === "UPI" || payment === "CASH" || payment === "ZERO"
+                      ? 0
+                      : payment === "PARTIAL"
+                        ? Math.max(0, total - Number(partialAmount || 0))
+                        : total,
+                  )}
+                </strong>
+              </div>
+            </div>
             <button
               className="primary wide"
               disabled={
                 payment === "PARTIAL" &&
-                (!Number(partialAmount) || Number(partialAmount) >= total)
+                (partialAmount === "" ||
+                  Number(partialAmount) < 0 ||
+                  Number(partialAmount) >= total)
               }
               onClick={pay}
             >
