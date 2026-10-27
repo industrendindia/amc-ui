@@ -261,8 +261,14 @@ export const api = {
       { method: "PUT", body: JSON.stringify(payload) },
       token,
     ),
-  jobCards: (token: string) =>
-    request<Array<Record<string, unknown>>>("/job-cards", {}, token),
+  jobCards: (page: number, token: string) =>
+    request<{
+      content: Array<Record<string, unknown>>;
+      page: number;
+      size: number;
+      totalElements: number;
+      totalPages: number;
+    }>(`/job-cards?page=${page}`, {}, token),
   jobCard: (id: string, token: string) =>
     request<Record<string, unknown>>(`/job-cards/${id}`, {}, token),
   assignChefs: (id: string, employeeIds: string[], token: string) =>

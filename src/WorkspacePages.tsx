@@ -5,6 +5,8 @@ import {
   CakeSlice,
   ChefHat,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ChevronUp,
   Clock3,
   Image,
@@ -325,21 +327,26 @@ export function EmployeesPage({ user }: { user: User }) {
 
 export function JobCardsPage({ user }: { user: User }) {
   const [cards, setCards] = useState<Array<Record<string, unknown>>>([]),
+    [page, setPage] = useState(0),
+    [totalPages, setTotalPages] = useState(0),
+    [totalJobs, setTotalJobs] = useState(0),
     [employees, setEmployees] = useState<Employee[]>([]),
     [selected, setSelected] = useState<Record<string, unknown> | null>(null),
     [chosen, setChosen] = useState<string[]>([]),
     [note, setNote] = useState(""),
     [detailError, setDetailError] = useState("");
   const load = () =>
-    Promise.all([api.jobCards(user.token), api.employees(user.token)]).then(
+    Promise.all([api.jobCards(page, user.token), api.employees(user.token)]).then(
       ([j, e]) => {
-        setCards(j);
+        setCards(j.content);
+        setTotalPages(j.totalPages);
+        setTotalJobs(j.totalElements);
         setEmployees(e);
       },
     );
   useEffect(() => {
     load();
-  }, [user.token]);
+  }, [user.token, page]);
   async function view(id: string) {
     setDetailError("");
     try {
@@ -431,6 +438,20 @@ export function JobCardsPage({ user }: { user: User }) {
               ))}
           </section>
         ))}
+      </div>
+      <div className="pagination job-pagination">
+        <button disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
+          <ChevronLeft /> Previous
+        </button>
+        <span>
+          Page {page + 1} of {Math.max(totalPages, 1)} · {totalJobs} jobs
+        </span>
+        <button
+          disabled={page + 1 >= totalPages}
+          onClick={() => setPage((p) => p + 1)}
+        >
+          Next <ChevronRight />
+        </button>
       </div>
       {detailError && <div className="error">{detailError}</div>}
       {selected && (

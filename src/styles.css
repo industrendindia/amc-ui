@@ -1873,6 +1873,14 @@ h2 {
 .pagination button:disabled {
   opacity: 0.4;
 }
+.job-pagination button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.job-pagination svg {
+  width: 15px;
+}
 .branch-config-head {
   display: flex;
   justify-content: space-between;
