@@ -530,9 +530,9 @@ export function BillsPage({ user }: { user: User }) {
     [delivery, setDelivery] = useState({
       id: "",
       otp: "",
-      optOut: false,
       fallback: "",
       status: "",
+      error: "",
       files: [] as File[],
     }),
     [pay, setPay] = useState({
@@ -582,17 +582,44 @@ export function BillsPage({ user }: { user: User }) {
     setPay({ ...pay, amount: "" });
     load();
   }
-  async function requestOtp() {
-    const result = await api.requestDeliveryOtp(
-      delivery.id,
-      delivery.optOut,
-      user.token,
-    );
+  async function requestOtp(id = delivery.id) {
+    setDelivery((current) => ({
+      ...current,
+      id,
+      status: "REQUESTING",
+      error: "",
+    }));
+    try {
+      const result = await api.requestDeliveryOtp(id, false, user.token);
+      setDelivery((current) => ({
+        ...current,
+        id,
+        fallback: String(result.fallbackOtp || "987600"),
+        status: String(result.status || "FALLBACK_AVAILABLE"),
+        error: "",
+      }));
+    } catch (error) {
+      setDelivery((current) => ({
+        ...current,
+        id,
+        status: "REQUEST_FAILED",
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unable to prepare delivery verification",
+      }));
+    }
+  }
+  function beginDelivery(id: string) {
     setDelivery({
-      ...delivery,
-      fallback: String(result.fallbackOtp || ""),
-      status: String(result.status || ""),
+      id,
+      otp: "",
+      fallback: "",
+      status: "REQUESTING",
+      error: "",
+      files: [],
     });
+    void requestOtp(id);
   }
   async function confirmDelivery() {
     try {
@@ -603,9 +630,9 @@ export function BillsPage({ user }: { user: User }) {
       setDelivery({
         id: "",
         otp: "",
-        optOut: false,
         fallback: "",
         status: "",
+        error: "",
         files: [],
       });
       load();
@@ -674,16 +701,7 @@ export function BillsPage({ user }: { user: User }) {
               <button
                 className="row-deliver"
                 disabled={String(o.fulfillment_status) === "DELIVERED"}
-                onClick={() =>
-                  setDelivery({
-                    id,
-                    otp: "",
-                    optOut: false,
-                    fallback: "",
-                    status: "",
-                    files: [],
-                  })
-                }
+                onClick={() => beginDelivery(id)}
               >
                 {String(o.fulfillment_status) === "DELIVERED"
                   ? "Delivered"
@@ -793,16 +811,7 @@ export function BillsPage({ user }: { user: User }) {
                   <button
                     className="primary"
                     disabled={String(detail.fulfillment_status) === "DELIVERED"}
-                    onClick={() =>
-                      setDelivery({
-                        id,
-                        otp: "",
-                        optOut: false,
-                        fallback: "",
-                        status: "",
-                        files: [],
-                      })
-                    }
+                    onClick={() => beginDelivery(id)}
                   >
                     {String(detail.fulfillment_status) === "DELIVERED"
                       ? "Delivered"
@@ -843,20 +852,16 @@ export function BillsPage({ user }: { user: User }) {
             <p>
               Confirm the customer’s mobile before marking this order delivered.
             </p>
-            {!delivery.fallback ? (
+            {delivery.status === "REQUESTING" ? (
+              <div className="otp-status">
+                <ShieldCheck />
+                <span>Preparing delivery verification…</span>
+              </div>
+            ) : delivery.error ? (
               <>
-                <label className="consent-choice">
-                  <input
-                    type="checkbox"
-                    checked={delivery.optOut}
-                    onChange={(e) =>
-                      setDelivery({ ...delivery, optOut: e.target.checked })
-                    }
-                  />{" "}
-                  Customer does not want WhatsApp OTP
-                </label>
-                <button className="primary wide" onClick={requestOtp}>
-                  <ShieldCheck /> Request delivery OTP
+                <div className="error">{delivery.error}</div>
+                <button className="primary wide" onClick={() => requestOtp()}>
+                  Try again
                 </button>
               </>
             ) : (
@@ -864,22 +869,21 @@ export function BillsPage({ user }: { user: User }) {
                 <div className="otp-status">
                   <ShieldCheck />
                   <span>
-                    {delivery.status.includes("NOT_CONFIGURED") ||
-                    delivery.optOut ? (
+                    {delivery.status.includes("NOT_CONFIGURED") ? (
                       <>
-                        Use fallback OTP <strong>{delivery.fallback}</strong>
+                        WhatsApp is not enabled for this shop. Use default OTP{" "}
+                        <strong>{delivery.fallback}</strong>.
                       </>
                     ) : (
                       <>
-                        OTP requested. Fallback{" "}
-                        <strong>{delivery.fallback}</strong> is available until
-                        WhatsApp delivery is enabled.
+                        OTP requested on WhatsApp. If it is not delivered, use
+                        default OTP <strong>{delivery.fallback}</strong>.
                       </>
                     )}
                   </span>
                 </div>
                 <label className="otp-input">
-                  Enter 6-digit OTP
+                  Enter WhatsApp or default OTP
                   <input
                     inputMode="numeric"
                     maxLength={6}
@@ -892,6 +896,9 @@ export function BillsPage({ user }: { user: User }) {
                     }
                   />
                 </label>
+                <button className="text-btn" onClick={() => requestOtp()}>
+                  Request OTP again
+                </button>
                 <label className="delivery-upload">
                   <Upload />
                   <strong>Add delivered cake images or reels</strong>
