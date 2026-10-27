@@ -37,6 +37,7 @@ import { api } from "./api";
 import type { CartLine, CatalogItem, Customer, User } from "./types";
 import {
   CatalogManagementPage,
+  GalleryPage,
   IntegrationsPage,
   NotificationsPage,
   ReportsPage,
@@ -225,6 +226,11 @@ function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
       workspaceUser.domain === "BAKERY" ? "Kitchen jobs" : "Job cards",
       ChefHat,
     ],
+    [
+      "gallery",
+      workspaceUser.domain === "BAKERY" ? "Cake gallery" : "Gallery",
+      ImagePlus,
+    ],
     ...(user.role === "EMPLOYEE"
       ? []
       : ([
@@ -260,6 +266,8 @@ function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
       <JobCardsPage user={workspaceUser} />
     ) : page === "employees" ? (
       <EmployeesPage user={workspaceUser} />
+    ) : page === "gallery" ? (
+      <GalleryPage user={workspaceUser} />
     ) : page === "catalog" ? (
       <CatalogManagementPage user={workspaceUser} />
     ) : page === "notifications" ? (

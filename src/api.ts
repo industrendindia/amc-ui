@@ -134,8 +134,8 @@ export const api = {
       { method: "POST", body: JSON.stringify(payload) },
       token,
     ),
-  reports: (token: string) =>
-    request<Record<string, unknown>>("/reports", {}, token),
+  reports: (period: string, token: string) =>
+    request<Record<string, unknown>>(`/reports?period=${period}`, {}, token),
   createOrder: async (payload: unknown, token: string) => {
     return request<{ id: string; billNumber: string }>(
       "/orders",
@@ -180,8 +180,56 @@ export const api = {
       { method: "POST", body: JSON.stringify(payload) },
       token,
     ),
-  markDelivered: (id: string, token: string) =>
-    request<void>(`/orders/${id}/delivered`, { method: "PATCH" }, token),
+  requestDeliveryOtp: (id: string, whatsappOptOut: boolean, token: string) =>
+    request<Record<string, unknown>>(
+      `/delivery/orders/${id}/request-otp`,
+      { method: "POST", body: JSON.stringify({ whatsappOptOut }) },
+      token,
+    ),
+  confirmDelivery: (id: string, otp: string, token: string) =>
+    request<void>(
+      `/delivery/orders/${id}/confirm`,
+      { method: "POST", body: JSON.stringify({ otp }) },
+      token,
+    ),
+  uploadDeliveryMedia: async (id: string, files: File[], token: string) => {
+    if (!files.length) return;
+    const body = new FormData();
+    files.forEach((f) => body.append("files", f));
+    const res = await fetch(`/api/delivery/orders/${id}/media`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        ...(adminTenantContext ? { "X-Tenant-Id": adminTenantContext } : {}),
+      },
+      body,
+    });
+    if (!res.ok)
+      throw new Error("Delivery confirmed, but media upload failed.");
+  },
+  gallery: (page: number, token: string) =>
+    request<{
+      content: Array<Record<string, unknown>>;
+      page: number;
+      totalPages: number;
+      totalElements: number;
+    }>(`/delivery/gallery?page=${page}`, {}, token),
+  favoriteGallery: (id: string, value: boolean, token: string) =>
+    request<void>(
+      `/delivery/gallery/${id}/favorite?value=${value}`,
+      { method: "PATCH" },
+      token,
+    ),
+  galleryContent: async (id: string, token: string) => {
+    const res = await fetch(`/api/delivery/gallery/${id}/content`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        ...(adminTenantContext ? { "X-Tenant-Id": adminTenantContext } : {}),
+      },
+    });
+    if (!res.ok) throw new Error("Unable to load gallery media");
+    return res.blob();
+  },
   orderImages: (orderId: string, token: string) =>
     request<
       Array<{

@@ -12,7 +12,9 @@ import {
   Plus,
   ReceiptText,
   Search,
+  ShieldCheck,
   SquarePen,
+  Upload,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -525,6 +527,14 @@ export function BillsPage({ user }: { user: User }) {
     [expanded, setExpanded] = useState<string | null>(null),
     [detail, setDetail] = useState<Record<string, unknown> | null>(null),
     [detailError, setDetailError] = useState(""),
+    [delivery, setDelivery] = useState({
+      id: "",
+      otp: "",
+      optOut: false,
+      fallback: "",
+      status: "",
+      files: [] as File[],
+    }),
     [pay, setPay] = useState({
       amount: "",
       method: "UPI",
@@ -572,10 +582,38 @@ export function BillsPage({ user }: { user: User }) {
     setPay({ ...pay, amount: "" });
     load();
   }
-  async function delivered(id: string) {
-    await api.markDelivered(id, user.token);
-    if (detail?.id === id) setDetail(await api.order(id, user.token));
-    load();
+  async function requestOtp() {
+    const result = await api.requestDeliveryOtp(
+      delivery.id,
+      delivery.optOut,
+      user.token,
+    );
+    setDelivery({
+      ...delivery,
+      fallback: String(result.fallbackOtp || ""),
+      status: String(result.status || ""),
+    });
+  }
+  async function confirmDelivery() {
+    try {
+      await api.confirmDelivery(delivery.id, delivery.otp, user.token);
+      await api.uploadDeliveryMedia(delivery.id, delivery.files, user.token);
+      if (String(detail?.id) === delivery.id)
+        setDetail(await api.order(delivery.id, user.token));
+      setDelivery({
+        id: "",
+        otp: "",
+        optOut: false,
+        fallback: "",
+        status: "",
+        files: [],
+      });
+      load();
+    } catch (error) {
+      setDetailError(
+        error instanceof Error ? error.message : "Unable to verify delivery",
+      );
+    }
   }
   return (
     <div className="standard-page">
@@ -634,7 +672,16 @@ export function BillsPage({ user }: { user: User }) {
               <button
                 className="row-deliver"
                 disabled={String(o.fulfillment_status) === "DELIVERED"}
-                onClick={() => delivered(id)}
+                onClick={() =>
+                  setDelivery({
+                    id,
+                    otp: "",
+                    optOut: false,
+                    fallback: "",
+                    status: "",
+                    files: [],
+                  })
+                }
               >
                 {String(o.fulfillment_status) === "DELIVERED"
                   ? "Delivered"
@@ -744,7 +791,16 @@ export function BillsPage({ user }: { user: User }) {
                   <button
                     className="primary"
                     disabled={String(detail.fulfillment_status) === "DELIVERED"}
-                    onClick={() => delivered(id)}
+                    onClick={() =>
+                      setDelivery({
+                        id,
+                        otp: "",
+                        optOut: false,
+                        fallback: "",
+                        status: "",
+                        files: [],
+                      })
+                    }
                   >
                     {String(detail.fulfillment_status) === "DELIVERED"
                       ? "Delivered"
@@ -771,6 +827,102 @@ export function BillsPage({ user }: { user: User }) {
           Next
         </button>
       </div>
+      {delivery.id && (
+        <div className="delivery-backdrop">
+          <section className="delivery-dialog">
+            <button
+              className="drawer-close"
+              onClick={() => setDelivery({ ...delivery, id: "" })}
+            >
+              ×
+            </button>
+            <span className="eyebrow">SECURE HANDOVER</span>
+            <h2>Verify delivery</h2>
+            <p>
+              Confirm the customer’s mobile before marking this order delivered.
+            </p>
+            {!delivery.fallback ? (
+              <>
+                <label className="consent-choice">
+                  <input
+                    type="checkbox"
+                    checked={delivery.optOut}
+                    onChange={(e) =>
+                      setDelivery({ ...delivery, optOut: e.target.checked })
+                    }
+                  />{" "}
+                  Customer does not want WhatsApp OTP
+                </label>
+                <button className="primary wide" onClick={requestOtp}>
+                  <ShieldCheck /> Request delivery OTP
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="otp-status">
+                  <ShieldCheck />
+                  <span>
+                    {delivery.status.includes("NOT_CONFIGURED") ||
+                    delivery.optOut ? (
+                      <>
+                        Use fallback OTP <strong>{delivery.fallback}</strong>
+                      </>
+                    ) : (
+                      <>
+                        OTP requested. Fallback{" "}
+                        <strong>{delivery.fallback}</strong> is available until
+                        WhatsApp delivery is enabled.
+                      </>
+                    )}
+                  </span>
+                </div>
+                <label className="otp-input">
+                  Enter 6-digit OTP
+                  <input
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={delivery.otp}
+                    onChange={(e) =>
+                      setDelivery({
+                        ...delivery,
+                        otp: e.target.value.replace(/\D/g, "").slice(0, 6),
+                      })
+                    }
+                  />
+                </label>
+                <label className="delivery-upload">
+                  <Upload />
+                  <strong>Add delivered cake images or reels</strong>
+                  <small>Up to 10 files · images 5 MB · reels 30 MB</small>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*,video/*"
+                    onChange={(e) =>
+                      setDelivery({
+                        ...delivery,
+                        files: Array.from(e.target.files || []),
+                      })
+                    }
+                  />
+                  <span>
+                    {delivery.files.length
+                      ? `${delivery.files.length} selected`
+                      : "Choose files"}
+                  </span>
+                </label>
+                <button
+                  className="primary wide"
+                  disabled={delivery.otp.length !== 6}
+                  onClick={confirmDelivery}
+                >
+                  Verify OTP & mark delivered
+                </button>
+              </>
+            )}
+          </section>
+        </div>
+      )}
     </div>
   );
 }
