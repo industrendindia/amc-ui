@@ -330,23 +330,29 @@ export function JobCardsPage({ user }: { user: User }) {
     [page, setPage] = useState(0),
     [totalPages, setTotalPages] = useState(0),
     [totalJobs, setTotalJobs] = useState(0),
+    [activeStatus, setActiveStatus] = useState(""),
+    [statusCounts, setStatusCounts] = useState<Record<string, number>>({}),
     [employees, setEmployees] = useState<Employee[]>([]),
     [selected, setSelected] = useState<Record<string, unknown> | null>(null),
     [chosen, setChosen] = useState<string[]>([]),
     [note, setNote] = useState(""),
     [detailError, setDetailError] = useState("");
   const load = () =>
-    Promise.all([api.jobCards(page, user.token), api.employees(user.token)]).then(
+    Promise.all([
+      api.jobCards(page, activeStatus, user.token),
+      api.employees(user.token),
+    ]).then(
       ([j, e]) => {
         setCards(j.content);
         setTotalPages(j.totalPages);
         setTotalJobs(j.totalElements);
+        setStatusCounts(j.statusCounts || {});
         setEmployees(e);
       },
     );
   useEffect(() => {
     load();
-  }, [user.token, page]);
+  }, [user.token, page, activeStatus]);
   async function view(id: string) {
     setDetailError("");
     try {
@@ -396,51 +402,56 @@ export function JobCardsPage({ user }: { user: User }) {
           </p>
         </div>
       </div>
-      <div className="job-board">
-        {["OPEN", "ASSIGNED", "IN_PROGRESS", "READY", "COMPLETED"].map((s) => (
-          <section key={s}>
-            <h3>
-              {s.replace("_", " ")}
-              <span>{cards.filter((c) => c.status === s).length}</span>
-            </h3>
-            {cards
-              .filter((c) => c.status === s)
-              .map((c) => (
-                <button
-                  className="job-card"
-                  key={String(c.id)}
-                  onClick={() => view(String(c.id))}
-                >
-                  <span
-                    className={`priority ${String(c.priority).toLowerCase()}`}
-                  >
-                    {String(c.priority)}
-                  </span>
-                  <h4>{String(c.title)}</h4>
-                  <p>
-                    {String(c.job_number || "Kitchen job")} ·{" "}
-                    {String(c.bill_number || "")}
-                  </p>
-                  <div>
-                    <MapPin /> {String(c.branch_name)}
-                  </div>
-                  <div>
-                    <ChefHat /> {String(c.chef_names || "Unassigned")}
-                  </div>
-                  <div>
-                    <Image /> {String(c.reference_image_count || 0)} references
-                  </div>
-                  {Boolean(c.due_at) && (
-                    <div>
-                      <Clock3 /> {date(c.due_at)}
-                    </div>
-                  )}
-                </button>
-              ))}
-          </section>
+      <div className="job-status-grid">
+        {["OPEN", "IN_PROGRESS", "ASSIGNED", "COMPLETED"].map((s) => (
+          <button
+            key={s}
+            className={`job-status-card ${activeStatus === s ? "active" : ""}`}
+            onClick={() => {
+              setPage(0);
+              setActiveStatus((current) => (current === s ? "" : s));
+            }}
+          >
+            <span>{s.replace("_", " ")}</span>
+            <strong>{statusCounts[s] || 0}</strong>
+            {activeStatus === s ? <ChevronUp /> : <ChevronDown />}
+          </button>
         ))}
       </div>
-      <div className="pagination job-pagination">
+      {activeStatus && (
+        <section className="job-results">
+          <div className="job-results-head">
+            <div>
+              <span className="eyebrow">{activeStatus.replace("_", " ")}</span>
+              <h2>{totalJobs} jobs</h2>
+            </div>
+            <button className="text-btn" onClick={() => setActiveStatus("")}>
+              Collapse
+            </button>
+          </div>
+          <div className="job-results-grid">
+            {cards.map((c) => (
+              <button
+                className="job-card"
+                key={String(c.id)}
+                onClick={() => view(String(c.id))}
+              >
+                <span className={`priority ${String(c.priority).toLowerCase()}`}>
+                  {String(c.priority)}
+                </span>
+                <h4>{String(c.title)}</h4>
+                <p>{String(c.job_number || "Kitchen job")} · {String(c.bill_number || "")}</p>
+                <div><MapPin /> {String(c.branch_name)}</div>
+                <div><ChefHat /> {String(c.chef_names || "Unassigned")}</div>
+                <div><Image /> {String(c.reference_image_count || 0)} references</div>
+                {Boolean(c.due_at) && <div><Clock3 /> {date(c.due_at)}</div>}
+              </button>
+            ))}
+          </div>
+          {cards.length === 0 && <p className="empty-state">No jobs in this status.</p>}
+        </section>
+      )}
+      {activeStatus && totalPages > 1 && <div className="pagination job-pagination">
         <button disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
           <ChevronLeft /> Previous
         </button>
@@ -453,7 +464,7 @@ export function JobCardsPage({ user }: { user: User }) {
         >
           Next <ChevronRight />
         </button>
-      </div>
+      </div>}
       {detailError && <div className="error">{detailError}</div>}
       {selected && (
         <div className="bill-drawer job-detail">

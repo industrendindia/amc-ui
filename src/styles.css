@@ -1455,6 +1455,68 @@ h2 {
   gap: 13px;
   align-items: start;
 }
+.job-status-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.job-status-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 5px 12px;
+  padding: 18px;
+  text-align: left;
+  color: var(--ink);
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  box-shadow: 0 7px 24px rgba(24, 56, 47, 0.05);
+}
+.job-status-card span {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+.job-status-card strong {
+  grid-row: 1 / 3;
+  grid-column: 2;
+  font-family: "Fraunces", serif;
+  font-size: 30px;
+}
+.job-status-card svg {
+  width: 17px;
+  color: var(--muted);
+}
+.job-status-card.active {
+  border-color: var(--green);
+  background: var(--mint);
+}
+.job-results {
+  padding: 20px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+.job-results-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.job-results-head h2 {
+  margin: 3px 0 0;
+}
+.job-results-head .text-btn {
+  width: auto;
+}
+.job-results-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
 .job-board > section {
   background: #ebece8;
   padding: 12px;
@@ -2255,6 +2317,19 @@ h2 {
 @media (max-width: 620px) {
   .team-grid,
   .job-board {
+    grid-template-columns: 1fr;
+  }
+  .job-status-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .job-status-card {
+    padding: 14px;
+  }
+  .job-results {
+    padding: 14px;
+  }
+  .job-results-grid {
     grid-template-columns: 1fr;
   }
   .bill-row > button:first-child {
