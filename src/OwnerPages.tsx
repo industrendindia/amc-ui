@@ -303,7 +303,7 @@ export function NotificationsPage({ user }: { user: User }) {
       <section className="content-card automation-panel">
         <div className="form-grid">
           <label>
-            Reminder days before purchase anniversary
+            Reminder window before event or expiry (days)
             <input
               type="number"
               min="1"
@@ -396,7 +396,7 @@ export function NotificationsPage({ user }: { user: User }) {
                 <small>{String(item.kind).replaceAll("_", " ")} · {String(item.phone)}</small>
                 <small>{String(item.message)}</small>
               </span>
-              <span className="status-pill">{String(item.status)}</span>
+              <span className="status-pill">{String(item.delivery_state)}</span>
             </div>
           ))
         )}
