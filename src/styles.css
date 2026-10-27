@@ -42,6 +42,21 @@ html[data-theme="bakery-rose"] .product-card,
 html[data-theme="bakery-rose"] .content-card {
   border-color: #ead9d2;
 }
+html[data-theme="bakery-rose"] .standard-page {
+  background: radial-gradient(
+    circle at 95% 0,
+    rgba(225, 159, 132, 0.12),
+    transparent 28rem
+  );
+}
+html[data-theme="bakery-rose"] .content-card {
+  background: linear-gradient(145deg, #fffefd, #fffaf6);
+  box-shadow: 0 12px 34px rgba(101, 52, 56, 0.07);
+}
+html[data-theme="bakery-rose"] .catalog-admin-grid section > h2,
+html[data-theme="bakery-rose"] .report-grid h2 {
+  color: #713845;
+}
 * {
   box-sizing: border-box;
 }
@@ -1306,6 +1321,76 @@ h2 {
   margin-top: 8px;
   color: var(--ink);
 }
+.form-grid > label,
+.employee-form > label {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  margin-bottom: 18px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.form-grid input:not([type="checkbox"]),
+.form-grid textarea,
+.form-grid select,
+.employee-form input:not([type="checkbox"]),
+.employee-form textarea {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  padding: 11px 13px;
+  background: white;
+  color: var(--ink);
+  outline: none;
+}
+.form-grid textarea,
+.employee-form textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+.form-grid input:focus,
+.form-grid textarea:focus,
+.form-grid select:focus,
+.employee-form input:focus,
+.employee-form textarea:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mint) 80%, transparent);
+}
+.employee-form > h2 {
+  margin-bottom: 20px;
+}
+.feature-toggle {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--cream);
+}
+.tenant-context {
+  display: grid;
+  gap: 5px;
+  padding: 10px 17px 14px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.tenant-context select {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 9px;
+  padding: 10px;
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.tenant-context option {
+  color: #2e2525;
+}
 .team-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1832,6 +1917,13 @@ h2 {
   gap: 14px;
 }
 .catalog-admin-grid section {
+  overflow: hidden;
+}
+.catalog-admin-grid section > h2 {
+  padding-bottom: 13px;
+  border-bottom: 1px solid var(--line);
+}
+.catalog-admin-grid section {
   padding: 18px;
 }
 .catalog-admin-row {
@@ -1869,6 +1961,9 @@ h2 {
   padding: 20px;
   margin-bottom: 15px;
 }
+.automation-panel .form-grid {
+  gap: 4px 22px;
+}
 .integration-state {
   display: flex;
   align-items: center;
@@ -1895,6 +1990,9 @@ h2 {
 }
 .report-grid section {
   padding: 20px;
+}
+.report-grid section {
+  min-width: 0;
 }
 .report-grid h2 {
   display: flex;
@@ -1988,6 +2086,21 @@ h2 {
   .report-grid,
   .integration-grid {
     grid-template-columns: 1fr;
+  }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .full {
+    grid-column: auto;
+  }
+  .catalog-admin-row,
+  .report-row {
+    grid-template-columns: 1fr auto;
+  }
+  .catalog-admin-row .status-pill,
+  .report-row > strong {
+    grid-column: 1 / -1;
+    justify-self: start;
   }
   .bill-images {
     display: none;

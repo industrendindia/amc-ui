@@ -1,4 +1,5 @@
 import type { Branch, Customer, Employee, User } from "./types";
+let adminTenantContext = "";
 const demoItems = [
   {
     id: "ro-amc",
@@ -44,6 +45,7 @@ async function request<T>(
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(adminTenantContext ? { "X-Tenant-Id": adminTenantContext } : {}),
       ...options.headers,
     },
   });
@@ -57,6 +59,9 @@ async function request<T>(
   return (text ? JSON.parse(text) : undefined) as T;
 }
 export const api = {
+  setTenantContext: (tenantId: string) => {
+    adminTenantContext = tenantId;
+  },
   login: async (username: string, password: string): Promise<User> => {
     try {
       return await request("/auth/login", {
@@ -144,7 +149,10 @@ export const api = {
     files.forEach((f) => body.append("files", f));
     const res = await fetch(`/api/orders/${orderId}/reference-images`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        ...(adminTenantContext ? { "X-Tenant-Id": adminTenantContext } : {}),
+      },
       body,
     });
     if (!res.ok)
@@ -262,7 +270,10 @@ export const api = {
     files.forEach((file) => body.append("files", file));
     const res = await fetch("/api/social/facebook/publish", {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        ...(adminTenantContext ? { "X-Tenant-Id": adminTenantContext } : {}),
+      },
       body,
     });
     if (!res.ok)

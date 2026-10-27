@@ -7,6 +7,7 @@ export type User = {
   domain?: string;
   themeKey?: string;
   branchName?: string;
+  facebookSocialEnabled?: boolean;
 };
 export type Customer = {
   id?: string;

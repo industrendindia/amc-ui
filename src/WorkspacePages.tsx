@@ -832,6 +832,7 @@ export function AdminTenantsPage({ user }: { user: User }) {
       themeKey: "bakery-rose",
       logoUrl: "",
       active: true,
+      facebookSocialEnabled: false,
       ownerName: "",
       ownerUsername: "",
       ownerPassword: "",
@@ -876,6 +877,7 @@ export function AdminTenantsPage({ user }: { user: User }) {
       themeKey: String(t.theme_key || "service-green"),
       logoUrl: String(t.logo_url || ""),
       active: Boolean(t.active),
+      facebookSocialEnabled: Boolean(t.facebook_social_enabled),
       ownerName: "",
       ownerUsername: "",
       ownerPassword: "",
@@ -976,6 +978,16 @@ export function AdminTenantsPage({ user }: { user: User }) {
                 onChange={(e) => setForm({ ...form, active: e.target.checked })}
               />{" "}
               Company active
+            </label>
+            <label className="switch-label feature-toggle">
+              <input
+                type="checkbox"
+                checked={form.facebookSocialEnabled}
+                onChange={(e) =>
+                  setForm({ ...form, facebookSocialEnabled: e.target.checked })
+                }
+              />
+              Facebook / AI Social package purchased
             </label>
             {!editingId && (
               <>

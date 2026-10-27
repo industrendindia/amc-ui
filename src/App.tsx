@@ -184,12 +184,47 @@ function Login({ onLogin }: { onLogin: (u: User) => void }) {
 }
 
 function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
-  const [page, setPage] = useState("order");
+  const [page, setPage] = useState(user.role === "ADMIN" ? "admin" : "order");
   const [drawer, setDrawer] = useState(false);
-  const nav: Array<[string, string, LucideIcon]> = [
+  const [adminTenants, setAdminTenants] = useState<
+    Array<Record<string, unknown>>
+  >([]);
+  const [selectedTenantId, setSelectedTenantId] = useState("");
+  useEffect(() => {
+    if (user.role === "ADMIN") api.tenants(user.token).then(setAdminTenants);
+  }, [user.role, user.token]);
+  const selectedTenant = adminTenants.find(
+    (t) => String(t.id) === selectedTenantId,
+  );
+  const workspaceUser: User = selectedTenant
+    ? {
+        ...user,
+        tenantName: String(selectedTenant.name),
+        domain: String(selectedTenant.domain),
+        themeKey: String(selectedTenant.themeKey),
+        facebookSocialEnabled: Boolean(selectedTenant.facebookSocialEnabled),
+      }
+    : user;
+  useEffect(() => {
+    api.setTenantContext(selectedTenantId);
+    if (selectedTenant) {
+      document.documentElement.dataset.theme = String(selectedTenant.themeKey);
+      document.documentElement.dataset.domain = String(selectedTenant.domain);
+      setPage("order");
+    } else if (user.role === "ADMIN") {
+      document.documentElement.dataset.theme = "service-green";
+      document.documentElement.dataset.domain = "PLATFORM";
+      setPage("admin");
+    }
+  }, [selectedTenantId]);
+  const workspaceNav: Array<[string, string, LucideIcon]> = [
     ["order", "New order", Plus],
     ["bills", "Bill summary", ClipboardList],
-    ["jobs", user.domain === "BAKERY" ? "Kitchen jobs" : "Job cards", ChefHat],
+    [
+      "jobs",
+      workspaceUser.domain === "BAKERY" ? "Kitchen jobs" : "Job cards",
+      ChefHat,
+    ],
     ...(user.role === "EMPLOYEE"
       ? []
       : ([
@@ -198,31 +233,43 @@ function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
           ["reports", "Reports", FileBarChart],
           ["notifications", "Notifications", Bell],
           ["integrations", "Integrations", Settings],
-          ["social", "AI Social", Facebook],
+          ...(workspaceUser.facebookSocialEnabled
+            ? [
+                ["social", "AI Social", Facebook] as [
+                  string,
+                  string,
+                  LucideIcon,
+                ],
+              ]
+            : []),
         ] as Array<[string, string, LucideIcon]>)),
-    ...(user.role === "ADMIN"
-      ? [["admin", "Admin setup", Settings] as [string, string, LucideIcon]]
-      : []),
   ];
+  const nav: Array<[string, string, LucideIcon]> =
+    user.role === "ADMIN"
+      ? [
+          ...(selectedTenantId ? workspaceNav : []),
+          ["admin", "Admin setup", Settings],
+        ]
+      : workspaceNav;
   const content =
     page === "order" ? (
-      <OrderFlow user={user} />
+      <OrderFlow user={workspaceUser} />
     ) : page === "bills" ? (
-      <BillsPage user={user} />
+      <BillsPage user={workspaceUser} />
     ) : page === "jobs" ? (
-      <JobCardsPage user={user} />
+      <JobCardsPage user={workspaceUser} />
     ) : page === "employees" ? (
-      <EmployeesPage user={user} />
+      <EmployeesPage user={workspaceUser} />
     ) : page === "catalog" ? (
-      <CatalogManagementPage user={user} />
+      <CatalogManagementPage user={workspaceUser} />
     ) : page === "notifications" ? (
-      <NotificationsPage user={user} />
+      <NotificationsPage user={workspaceUser} />
     ) : page === "reports" ? (
-      <ReportsPage user={user} />
+      <ReportsPage user={workspaceUser} />
     ) : page === "integrations" ? (
-      <IntegrationsPage user={user} />
+      <IntegrationsPage user={workspaceUser} />
     ) : page === "social" ? (
-      <SocialPage user={user} />
+      <SocialPage user={workspaceUser} />
     ) : page === "admin" ? (
       <AdminTenantsPage user={user} />
     ) : (
@@ -245,12 +292,28 @@ function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
         <div className="shop-card">
           <div className="shop-logo">AC</div>
           <div>
-            <strong>{user.tenantName}</strong>
+            <strong>{workspaceUser.tenantName}</strong>
             <span>
               {user.role === "ADMIN" ? "Platform access" : "Owner workspace"}
             </span>
           </div>
         </div>
+        {user.role === "ADMIN" && (
+          <label className="tenant-context">
+            <span>Manage shop</span>
+            <select
+              value={selectedTenantId}
+              onChange={(e) => setSelectedTenantId(e.target.value)}
+            >
+              <option value="">Platform administration</option>
+              {adminTenants.map((t) => (
+                <option key={String(t.id)} value={String(t.id)}>
+                  {String(t.name)}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <nav>
           {nav.map(([id, label, Icon]) => (
             <button
@@ -279,7 +342,7 @@ function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
             <Menu />
           </button>
           <div>
-            <span className="header-kicker">{user.tenantName}</span>
+            <span className="header-kicker">{workspaceUser.tenantName}</span>
             <strong>{nav.find((n) => n[0] === page)?.[1]}</strong>
           </div>
           <button className="avatar">
