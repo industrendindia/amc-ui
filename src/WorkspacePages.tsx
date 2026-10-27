@@ -383,6 +383,7 @@ export function JobCardsPage({ user }: { user: User }) {
       e.jobRole === "CHEF" &&
       (!selected || e.branchId === selected.branch_id),
   );
+  const jobReadOnly = String(selected?.fulfillment_status) === "DELIVERED";
   return (
     <div className="standard-page">
       <div className="page-intro">
@@ -468,12 +469,18 @@ export function JobCardsPage({ user }: { user: User }) {
             {String(selected.customer_name || "")} ·{" "}
             {String(selected.customer_phone || "")}
           </p>
+          {jobReadOnly && (
+            <div className="readonly-notice">
+              <ShieldCheck /> Delivered job — details are now read-only.
+            </div>
+          )}
           <h3>Assign available chefs</h3>
           <div className="chef-picker">
             {branchChefs.map((c) => (
               <label key={c.id}>
                 <input
                   type="checkbox"
+                  disabled={jobReadOnly}
                   checked={chosen.includes(c.id)}
                   onChange={(e) =>
                     setChosen((x) =>
@@ -487,7 +494,7 @@ export function JobCardsPage({ user }: { user: User }) {
               </label>
             ))}
           </div>
-          <button className="primary" onClick={assign}>
+          <button className="primary" disabled={jobReadOnly} onClick={assign}>
             Save assignment
           </button>
           <h3>Customer references</h3>
@@ -517,16 +524,17 @@ export function JobCardsPage({ user }: { user: User }) {
             ))}
           </div>
           <textarea
+            disabled={jobReadOnly}
             placeholder="Add a note for the kitchen team"
             value={note}
             onChange={(e) => setNote(e.target.value)}
           />
-          <button className="primary" onClick={addNote}>
+          <button className="primary" disabled={jobReadOnly} onClick={addNote}>
             Add note
           </button>
           <div className="status-actions">
             {["IN_PROGRESS", "READY", "COMPLETED"].map((s) => (
-              <button key={s} onClick={() => status(s)}>
+              <button key={s} disabled={jobReadOnly} onClick={() => status(s)}>
                 {s.replace("_", " ")}
               </button>
             ))}
