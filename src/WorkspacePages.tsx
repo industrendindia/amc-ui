@@ -647,17 +647,17 @@ export function BillsPage({ user }: { user: User }) {
             open = expanded === id;
           return (
             <article className="bill-row" key={id}>
-              <button onClick={() => toggle(id)}>
+              <button className="bill-summary-button" onClick={() => toggle(id)}>
                 <span className="bill-icon">
                   <ReceiptText />
                 </span>
-                <span>
+                <span className="bill-customer">
                   <strong>{String(o.bill_number)}</strong>
                   <small>
                     {String(o.customer_name)} · {String(o.customer_phone)}
                   </small>
                 </span>
-                <span>
+                <span className="bill-due">
                   <small>Due</small>
                   <strong>{date(o.due_at)}</strong>
                 </span>
@@ -666,8 +666,10 @@ export function BillsPage({ user }: { user: User }) {
                 >
                   {String(o.payment_status)}
                 </span>
-                <strong>{money(Number(o.total))}</strong>
-                {open ? <ChevronUp /> : <ChevronDown />}
+                <strong className="bill-total">{money(Number(o.total))}</strong>
+                <span className="bill-chevron" aria-hidden="true">
+                  {open ? <ChevronUp /> : <ChevronDown />}
+                </span>
               </button>
               <button
                 className="row-deliver"

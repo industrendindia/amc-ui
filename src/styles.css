@@ -2532,3 +2532,388 @@ h2 {
     justify-content: center;
   }
 }
+
+/* Responsive foundation: phone-first refinements shared by every workspace. */
+img,
+video {
+  max-width: 100%;
+}
+
+.workspace,
+.standard-page,
+.order-page,
+.content-card,
+.catalog-layout > *,
+.payment-layout > * {
+  min-width: 0;
+}
+
+.bill-summary-button .bill-customer,
+.bill-summary-button .bill-due,
+.bill-summary-button .bill-total {
+  min-width: 0;
+}
+
+.bill-summary-button .bill-customer strong,
+.bill-summary-button .bill-customer small {
+  overflow-wrap: anywhere;
+}
+
+.bill-chevron {
+  display: grid;
+  place-items: center;
+}
+
+@media (max-width: 900px) {
+  .sidebar {
+    width: min(86vw, 320px);
+    padding-bottom: max(22px, env(safe-area-inset-bottom));
+  }
+
+  .workspace > header {
+    min-height: 64px;
+    height: auto;
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .order-page,
+  .standard-page {
+    width: 100%;
+    padding: 28px clamp(18px, 4vw, 34px) 64px;
+  }
+
+  .page-intro {
+    align-items: flex-start;
+    gap: 18px;
+    margin-bottom: 22px;
+  }
+
+  .page-intro h1 {
+    font-size: clamp(30px, 6vw, 38px);
+    line-height: 1.08;
+  }
+
+  .catalog-layout,
+  .payment-layout {
+    gap: 18px;
+  }
+
+  .cart,
+  .checkout {
+    position: static;
+  }
+
+  .catalog-admin-grid,
+  .report-grid,
+  .integration-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  body {
+    overflow-x: hidden;
+  }
+
+  .workspace > header {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .workspace header > div {
+    min-width: 0;
+  }
+
+  .workspace header strong {
+    max-width: 56vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .order-page,
+  .standard-page {
+    padding: 22px 14px max(48px, env(safe-area-inset-bottom));
+  }
+
+  .page-intro {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+
+  .page-intro h1 {
+    font-size: 29px;
+    margin-top: 5px;
+  }
+
+  .page-intro p {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .page-intro > button,
+  .page-intro > .primary,
+  .actions .primary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .content-card,
+  .cart,
+  .checkout {
+    border-radius: 15px;
+  }
+
+  .customer-form,
+  .payment-layout > .content-card,
+  .cart,
+  .checkout,
+  .automation-panel,
+  .employee-form {
+    padding: 17px;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    max-width: 100%;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  .stepper {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .step:not(:last-child):after {
+    flex: 1;
+    width: auto;
+    min-width: 12px;
+  }
+
+  .filters {
+    display: grid;
+    gap: 10px;
+  }
+
+  .pills {
+    width: 100%;
+    margin: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .pills::-webkit-scrollbar {
+    display: none;
+  }
+
+  .pills button {
+    flex: 0 0 auto;
+    min-height: 40px;
+  }
+
+  .product-card {
+    min-height: auto;
+    padding: 17px;
+  }
+
+  .cart-line,
+  .checkout-line {
+    min-width: 0;
+  }
+
+  .checkout-line {
+    gap: 14px;
+    align-items: flex-start;
+  }
+
+  .checkout-line span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .checkout-line strong {
+    flex: 0 0 auto;
+  }
+
+  .bill-list {
+    border: 0;
+    background: transparent !important;
+    box-shadow: none !important;
+    display: grid;
+    gap: 12px;
+  }
+
+  .bill-row,
+  .bill-row:first-child {
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 15px;
+    background: white;
+    box-shadow: 0 7px 24px rgba(55, 37, 35, 0.06);
+  }
+
+  html[data-theme="bakery-rose"] .bill-row {
+    background: linear-gradient(145deg, #fffefd, #fff9f5);
+  }
+
+  .bill-row > .bill-summary-button {
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "icon customer chevron"
+      "icon status chevron"
+      "due due total";
+    gap: 6px 10px;
+    padding: 14px;
+    background: transparent;
+  }
+
+  .bill-summary-button .bill-icon {
+    grid-area: icon;
+    align-self: start;
+  }
+
+  .bill-summary-button .bill-customer {
+    grid-area: customer;
+  }
+
+  .bill-summary-button .bill-due {
+    grid-area: due;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  .bill-summary-button .bill-due small {
+    margin: 0;
+  }
+
+  .bill-summary-button .status-pill {
+    grid-area: status;
+    justify-self: start;
+  }
+
+  .bill-summary-button .bill-total {
+    grid-area: total;
+    align-self: end;
+    text-align: right;
+  }
+
+  .bill-summary-button .bill-chevron {
+    grid-area: chevron;
+  }
+
+  .bill-row .row-deliver {
+    width: calc(100% - 28px);
+    min-height: 42px;
+    margin: 0 14px 14px;
+    background: var(--mint);
+    border-color: transparent;
+  }
+
+  .bill-expanded {
+    padding: 16px 14px 18px;
+    border-top: 1px solid var(--line);
+  }
+
+  .bill-expanded h3 {
+    margin: 22px 0 8px;
+    font-size: 17px;
+  }
+
+  .bill-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bill-facts span:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .reference-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .payment-inline,
+  .partial-payment {
+    grid-template-columns: 1fr;
+  }
+
+  .payment-inline > *,
+  .payment-inline input:nth-of-type(2),
+  .payment-inline button {
+    width: 100%;
+    grid-column: auto;
+  }
+
+  .bill-toolbar {
+    padding: 12px;
+  }
+
+  .bill-toolbar > strong {
+    font-size: 12px;
+    padding-left: 3px;
+  }
+
+  .pagination {
+    gap: 7px;
+    font-size: 12px;
+  }
+
+  .pagination button {
+    min-height: 42px;
+    padding: 9px 11px;
+  }
+
+  .delivery-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .delivery-dialog {
+    width: 100%;
+    max-height: 92dvh;
+    overflow-y: auto;
+    border-radius: 22px 22px 0 0;
+    padding: 23px 18px max(24px, env(safe-area-inset-bottom));
+  }
+
+  .team-grid,
+  .job-board,
+  .catalog-admin-grid,
+  .report-grid,
+  .integration-grid,
+  .type-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .job-board > section,
+  .employee-card,
+  .catalog-admin-grid section,
+  .report-grid section {
+    min-width: 0;
+  }
+
+  .catalog-admin-row,
+  .report-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .catalog-admin-row span:first-child,
+  .report-row > span:first-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .gallery-empty {
+    padding: 36px 18px;
+  }
+}
