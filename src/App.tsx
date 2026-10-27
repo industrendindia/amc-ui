@@ -35,6 +35,12 @@ import {
 } from "./WorkspacePages";
 import { api } from "./api";
 import type { CartLine, CatalogItem, Customer, User } from "./types";
+import {
+  CatalogManagementPage,
+  IntegrationsPage,
+  NotificationsPage,
+  ReportsPage,
+} from "./OwnerPages";
 
 const emptyCustomer: Customer = {
   name: "",
@@ -186,10 +192,14 @@ function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
     ["jobs", user.domain === "BAKERY" ? "Kitchen jobs" : "Job cards", ChefHat],
     ...(user.role === "EMPLOYEE"
       ? []
-      : [["employees", "Employees", Users] as [string, string, LucideIcon]]),
-    ["reports", "Reports", FileBarChart],
-    ["notifications", "Notifications", Bell],
-    ["social", "AI Social", Facebook],
+      : ([
+          ["employees", "Employees", Users],
+          ["catalog", "Catalog", Package],
+          ["reports", "Reports", FileBarChart],
+          ["notifications", "Notifications", Bell],
+          ["integrations", "Integrations", Settings],
+          ["social", "AI Social", Facebook],
+        ] as Array<[string, string, LucideIcon]>)),
     ...(user.role === "ADMIN"
       ? [["admin", "Admin setup", Settings] as [string, string, LucideIcon]]
       : []),
@@ -203,14 +213,20 @@ function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
       <JobCardsPage user={user} />
     ) : page === "employees" ? (
       <EmployeesPage user={user} />
+    ) : page === "catalog" ? (
+      <CatalogManagementPage user={user} />
     ) : page === "notifications" ? (
-      <Notifications />
+      <NotificationsPage user={user} />
+    ) : page === "reports" ? (
+      <ReportsPage user={user} />
+    ) : page === "integrations" ? (
+      <IntegrationsPage user={user} />
     ) : page === "social" ? (
       <SocialPage user={user} />
     ) : page === "admin" ? (
       <AdminTenantsPage user={user} />
     ) : (
-      <ComingSoon title="Reports" />
+      <ComingSoon title="Coming soon" />
     );
   return (
     <div className="app-shell">

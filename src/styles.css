@@ -1826,6 +1826,108 @@ h2 {
 .tenant-edit {
   margin-top: 12px;
 }
+.catalog-admin-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.catalog-admin-grid section {
+  padding: 18px;
+}
+.catalog-admin-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+  text-align: left;
+  padding: 12px 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+}
+.catalog-admin-row span:first-child {
+  display: grid;
+}
+.catalog-admin-row small {
+  color: var(--muted);
+}
+.package-items {
+  display: grid;
+  gap: 7px;
+  padding: 16px;
+  margin-top: 15px;
+  background: var(--cream);
+  border-radius: 12px;
+}
+.package-items label {
+  display: flex;
+  gap: 8px;
+}
+.automation-panel {
+  padding: 20px;
+  margin-bottom: 15px;
+}
+.integration-state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 15px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #fff4df;
+  color: #986317;
+}
+.integration-state.connected {
+  background: var(--mint);
+  color: var(--green);
+}
+.notification-list > textarea {
+  width: calc(100% - 38px);
+  margin: 0 19px 12px;
+  min-height: 72px;
+}
+.report-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.report-grid section {
+  padding: 20px;
+}
+.report-grid h2 {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.report-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 14px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+  align-items: center;
+}
+.report-row span:first-child {
+  display: grid;
+}
+.report-row small {
+  color: var(--muted);
+}
+.integration-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.integration-grid article {
+  padding: 25px;
+}
+.integration-grid article > svg {
+  color: var(--green);
+  width: 34px;
+  height: 34px;
+}
 @media (max-width: 1000px) {
   .team-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -1881,6 +1983,11 @@ h2 {
   .branch-config-head {
     align-items: stretch;
     flex-direction: column;
+  }
+  .catalog-admin-grid,
+  .report-grid,
+  .integration-grid {
+    grid-template-columns: 1fr;
   }
   .bill-images {
     display: none;

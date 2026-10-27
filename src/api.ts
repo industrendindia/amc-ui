@@ -96,6 +96,41 @@ export const api = {
       return [...demoItems];
     }
   },
+  manageCatalog: (token: string) =>
+    request<Array<Record<string, unknown>>>("/catalog/manage", {}, token),
+  saveCatalogItem: (id: string | null, payload: unknown, token: string) =>
+    request<Record<string, unknown> | void>(
+      id ? `/catalog/${id}` : "/catalog",
+      { method: id ? "PUT" : "POST", body: JSON.stringify(payload) },
+      token,
+    ),
+  notificationSettings: (token: string) =>
+    request<Record<string, unknown>>(
+      "/owner/notifications/settings",
+      {},
+      token,
+    ),
+  saveNotificationSettings: (payload: unknown, token: string) =>
+    request<void>(
+      "/owner/notifications/settings",
+      { method: "PUT", body: JSON.stringify(payload) },
+      token,
+    ),
+  premiumCustomers: (page: number, token: string) =>
+    request<{
+      content: Array<Record<string, unknown>>;
+      page: number;
+      totalPages: number;
+      totalElements: number;
+    }>(`/owner/notifications/customers?page=${page}`, {}, token),
+  sendCustomerNotification: (payload: unknown, token: string) =>
+    request<Record<string, unknown>>(
+      "/owner/notifications/send",
+      { method: "POST", body: JSON.stringify(payload) },
+      token,
+    ),
+  reports: (token: string) =>
+    request<Record<string, unknown>>("/reports", {}, token),
   createOrder: async (payload: unknown, token: string) => {
     return request<{ id: string; billNumber: string }>(
       "/orders",
