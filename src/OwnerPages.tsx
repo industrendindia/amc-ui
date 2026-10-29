@@ -492,12 +492,12 @@ export function ReportsPage({ user }: { user: User }) {
         <label className="report-period">
           <span>Report period</span>
           <select value={period} onChange={(e) => setPeriod(e.target.value)}>
-            <option value="WEEK">Last week</option>
+            <option value="WEEK">Last 7 days</option>
             <option value="TWO_WEEKS">Last 2 weeks</option>
-            <option value="MONTH">Last month</option>
-            <option value="QUARTER">Last quarter</option>
-            <option value="TWO_QUARTERS">Last 2 quarters</option>
-            <option value="YEAR">Last year</option>
+            <option value="MONTH">Previous calendar month</option>
+            <option value="QUARTER">Previous quarter</option>
+            <option value="TWO_QUARTERS">Previous 2 quarters</option>
+            <option value="YEAR">Previous calendar year</option>
           </select>
         </label>
       </div>
@@ -518,6 +518,9 @@ export function ReportsPage({ user }: { user: User }) {
           <small>
             {String(selected.orders || 0)} orders ·{" "}
             {money(Number(selected.outstanding))} due
+            {report.rangeStart && report.rangeEnd
+              ? ` · ${new Date(String(report.rangeStart)).toLocaleDateString("en-IN")}–${new Date(String(report.rangeEnd)).toLocaleDateString("en-IN")}`
+              : ""}
           </small>
         </article>
       </div>

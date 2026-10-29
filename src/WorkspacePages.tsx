@@ -330,7 +330,13 @@ export function JobCardsPage({ user }: { user: User }) {
     [page, setPage] = useState(0),
     [totalPages, setTotalPages] = useState(0),
     [totalJobs, setTotalJobs] = useState(0),
-    [activeStatus, setActiveStatus] = useState(""),
+    [selectedStatuses, setSelectedStatuses] = useState([
+      "OPEN",
+      "ASSIGNED",
+      "IN_PROGRESS",
+      "READY",
+      "COMPLETED",
+    ]),
     [statusCounts, setStatusCounts] = useState<Record<string, number>>({}),
     [employees, setEmployees] = useState<Employee[]>([]),
     [selected, setSelected] = useState<Record<string, unknown> | null>(null),
@@ -339,7 +345,11 @@ export function JobCardsPage({ user }: { user: User }) {
     [detailError, setDetailError] = useState("");
   const load = () =>
     Promise.all([
-      api.jobCards(page, activeStatus, user.token),
+      api.jobCards(
+        page,
+        selectedStatuses.length ? selectedStatuses.join(",") : "NONE",
+        user.token,
+      ),
       api.employees(user.token),
     ]).then(
       ([j, e]) => {
@@ -352,7 +362,7 @@ export function JobCardsPage({ user }: { user: User }) {
     );
   useEffect(() => {
     load();
-  }, [user.token, page, activeStatus]);
+  }, [user.token, page, selectedStatuses.join(",")]);
   async function view(id: string) {
     setDetailError("");
     try {
@@ -403,55 +413,66 @@ export function JobCardsPage({ user }: { user: User }) {
         </div>
       </div>
       <div className="job-status-grid">
-        {["OPEN", "IN_PROGRESS", "ASSIGNED", "COMPLETED"].map((s) => (
-          <button
+        {["OPEN", "ASSIGNED", "IN_PROGRESS", "READY", "COMPLETED"].map((s) => (
+          <label
             key={s}
-            className={`job-status-card ${activeStatus === s ? "active" : ""}`}
-            onClick={() => {
-              setPage(0);
-              setActiveStatus((current) => (current === s ? "" : s));
-            }}
+            className={`job-status-card ${selectedStatuses.includes(s) ? "active" : ""}`}
           >
+            <input
+              type="checkbox"
+              checked={selectedStatuses.includes(s)}
+              onChange={(e) => {
+                setPage(0);
+                setSelectedStatuses((current) =>
+                  e.target.checked
+                    ? [...current, s]
+                    : current.filter((value) => value !== s),
+                );
+              }}
+            />
             <span>{s.replace("_", " ")}</span>
             <strong>{statusCounts[s] || 0}</strong>
-            {activeStatus === s ? <ChevronUp /> : <ChevronDown />}
-          </button>
+          </label>
         ))}
       </div>
-      {activeStatus && (
-        <section className="job-results">
-          <div className="job-results-head">
-            <div>
-              <span className="eyebrow">{activeStatus.replace("_", " ")}</span>
-              <h2>{totalJobs} jobs</h2>
-            </div>
-            <button className="text-btn" onClick={() => setActiveStatus("")}>
-              Collapse
+      <section className="job-results">
+        <div className="job-results-head">
+          <div>
+            <span className="eyebrow">FILTERED KITCHEN JOBS</span>
+            <h2>{totalJobs} jobs</h2>
+          </div>
+          <button
+            className="text-btn"
+            onClick={() => {
+              setPage(0);
+              setSelectedStatuses([
+                "OPEN",
+                "ASSIGNED",
+                "IN_PROGRESS",
+                "READY",
+                "COMPLETED",
+              ]);
+            }}
+          >
+            Select all
+          </button>
+        </div>
+        <div className="job-results-grid">
+          {cards.map((c) => (
+            <button className="job-card" key={String(c.id)} onClick={() => view(String(c.id))}>
+              <span className={`priority ${String(c.priority).toLowerCase()}`}>{String(c.priority)}</span>
+              <h4>{String(c.title)}</h4>
+              <p>{String(c.job_number || "Kitchen job")} · {String(c.bill_number || "")}</p>
+              <div><MapPin /> {String(c.branch_name)}</div>
+              <div><ChefHat /> {String(c.chef_names || "Unassigned")}</div>
+              <div><Image /> {String(c.reference_image_count || 0)} references</div>
+              {Boolean(c.due_at) && <div><Clock3 /> {date(c.due_at)}</div>}
             </button>
-          </div>
-          <div className="job-results-grid">
-            {cards.map((c) => (
-              <button
-                className="job-card"
-                key={String(c.id)}
-                onClick={() => view(String(c.id))}
-              >
-                <span className={`priority ${String(c.priority).toLowerCase()}`}>
-                  {String(c.priority)}
-                </span>
-                <h4>{String(c.title)}</h4>
-                <p>{String(c.job_number || "Kitchen job")} · {String(c.bill_number || "")}</p>
-                <div><MapPin /> {String(c.branch_name)}</div>
-                <div><ChefHat /> {String(c.chef_names || "Unassigned")}</div>
-                <div><Image /> {String(c.reference_image_count || 0)} references</div>
-                {Boolean(c.due_at) && <div><Clock3 /> {date(c.due_at)}</div>}
-              </button>
-            ))}
-          </div>
-          {cards.length === 0 && <p className="empty-state">No jobs in this status.</p>}
-        </section>
-      )}
-      {activeStatus && totalPages > 1 && <div className="pagination job-pagination">
+          ))}
+        </div>
+        {cards.length === 0 && <p className="empty-state">No jobs match the selected statuses.</p>}
+      </section>
+      {totalPages > 1 && <div className="pagination job-pagination">
         <button disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
           <ChevronLeft /> Previous
         </button>
@@ -525,7 +546,9 @@ export function JobCardsPage({ user }: { user: User }) {
           <h3>Chef notes</h3>
           <div className="note-thread">
             {(
-              (selected.notesHistory as Array<Record<string, unknown>>) || []
+              (selected.notesHistory as Array<Record<string, unknown>>) ||
+              (selected.notes_history as Array<Record<string, unknown>>) ||
+              []
             ).map((n) => (
               <article key={String(n.id)}>
                 <strong>{String(n.author_name)}</strong>
@@ -533,6 +556,9 @@ export function JobCardsPage({ user }: { user: User }) {
                 <small>{date(n.created_at)}</small>
               </article>
             ))}
+            {!((selected.notesHistory || selected.notes_history) as Array<unknown>)?.length && (
+              <p className="empty-state">No chef notes have been added yet.</p>
+            )}
           </div>
           <textarea
             disabled={jobReadOnly}
