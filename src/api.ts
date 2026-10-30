@@ -320,6 +320,20 @@ export const api = {
           .message || "Logo upload failed",
       );
   },
+  salespeople: (token: string) =>
+    request<Array<Record<string, unknown>>>("/admin/salespeople", {}, token),
+  createSalesperson: (payload: unknown, token: string) =>
+    request<Record<string, unknown>>(
+      "/admin/salespeople",
+      { method: "POST", body: JSON.stringify(payload) },
+      token,
+    ),
+  updateSalesperson: (id: string, payload: unknown, token: string) =>
+    request<Record<string, unknown>>(
+      `/admin/salespeople/${id}`,
+      { method: "PUT", body: JSON.stringify(payload) },
+      token,
+    ),
   tenantLogo: async (token: string) => {
     const res = await fetch("/api/tenant/logo", {
       headers: {

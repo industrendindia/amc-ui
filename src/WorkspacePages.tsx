@@ -326,6 +326,11 @@ export function EmployeesPage({ user }: { user: User }) {
 }
 
 export function JobCardsPage({ user }: { user: User }) {
+  const bakery = user.domain === "BAKERY";
+  const electrical = user.domain === "ELECTRICAL";
+  const workTitle = bakery ? "Kitchen jobs" : electrical ? "Repair cards" : "Job cards";
+  const workerLabel = bakery ? "chefs" : "technicians";
+  const workerRole = bakery ? "CHEF" : "SERVICE";
   const [cards, setCards] = useState<Array<Record<string, unknown>>>([]),
     [page, setPage] = useState(0),
     [totalPages, setTotalPages] = useState(0),
@@ -393,10 +398,10 @@ export function JobCardsPage({ user }: { user: User }) {
     await view(String(selected.id));
     load();
   }
-  const branchChefs = employees.filter(
+  const availableWorkers = employees.filter(
     (e) =>
       e.active &&
-      e.jobRole === "CHEF" &&
+      e.jobRole === workerRole &&
       (!selected || e.branchId === selected.branch_id),
   );
   const jobReadOnly = String(selected?.fulfillment_status) === "DELIVERED";
@@ -404,11 +409,11 @@ export function JobCardsPage({ user }: { user: User }) {
     <div className="standard-page">
       <div className="page-intro">
         <div>
-          <span className="eyebrow">LIVE KITCHEN</span>
-          <h1>Kitchen jobs</h1>
+          <span className="eyebrow">{bakery ? "LIVE KITCHEN" : electrical ? "REPAIR WORKSHOP" : "SERVICE OPERATIONS"}</span>
+          <h1>{workTitle}</h1>
           <p>
-            Jobs appear automatically from new orders. Assign one or more chefs
-            and keep one shared preparation history.
+            Work appears automatically from new orders. Assign one or more {workerLabel}
+            and keep one shared service history.
           </p>
         </div>
       </div>
@@ -438,7 +443,7 @@ export function JobCardsPage({ user }: { user: User }) {
       <section className="job-results">
         <div className="job-results-head">
           <div>
-            <span className="eyebrow">FILTERED KITCHEN JOBS</span>
+            <span className="eyebrow">FILTERED {workTitle.toUpperCase()}</span>
             <h2>{totalJobs} jobs</h2>
           </div>
           <button
@@ -462,7 +467,7 @@ export function JobCardsPage({ user }: { user: User }) {
             <button className="job-card" key={String(c.id)} onClick={() => view(String(c.id))}>
               <span className={`priority ${String(c.priority).toLowerCase()}`}>{String(c.priority)}</span>
               <h4>{String(c.title)}</h4>
-              <p>{String(c.job_number || "Kitchen job")} · {String(c.bill_number || "")}</p>
+              <p>{String(c.job_number || workTitle)} · {String(c.bill_number || "")}</p>
               <div><MapPin /> {String(c.branch_name)}</div>
               <div><ChefHat /> {String(c.chef_names || "Unassigned")}</div>
               <div><Image /> {String(c.reference_image_count || 0)} references</div>
@@ -493,7 +498,7 @@ export function JobCardsPage({ user }: { user: User }) {
             ×
           </button>
           <span className="eyebrow">
-            {String(selected.job_number || "KITCHEN JOB")} · Bill{" "}
+            {String(selected.job_number || workTitle.toUpperCase())} · Bill{" "}
             {String(selected.bill_number || "—")}
           </span>
           <h2>{String(selected.title)}</h2>
@@ -506,9 +511,9 @@ export function JobCardsPage({ user }: { user: User }) {
               <ShieldCheck /> Delivered job — details are now read-only.
             </div>
           )}
-          <h3>Assign available chefs</h3>
+          <h3>Assign available {workerLabel}</h3>
           <div className="chef-picker">
-            {branchChefs.map((c) => (
+            {availableWorkers.map((c) => (
               <label key={c.id}>
                 <input
                   type="checkbox"
@@ -543,7 +548,7 @@ export function JobCardsPage({ user }: { user: User }) {
               />
             ))}
           </div>
-          <h3>Chef notes</h3>
+          <h3>{bakery ? "Chef" : "Technician"} notes</h3>
           <div className="note-thread">
             {(
               (selected.notesHistory as Array<Record<string, unknown>>) ||
@@ -557,12 +562,12 @@ export function JobCardsPage({ user }: { user: User }) {
               </article>
             ))}
             {!((selected.notesHistory || selected.notes_history) as Array<unknown>)?.length && (
-              <p className="empty-state">No chef notes have been added yet.</p>
+              <p className="empty-state">No {bakery ? "chef" : "technician"} notes have been added yet.</p>
             )}
           </div>
           <textarea
             disabled={jobReadOnly}
-            placeholder="Add a note for the kitchen team"
+            placeholder={`Add a note for the ${bakery ? "kitchen" : "service"} team`}
             value={note}
             onChange={(e) => setNote(e.target.value)}
           />
@@ -1112,12 +1117,49 @@ function SecureImage({
   ) : null;
 }
 
+const TENANT_TABS = [
+  ["NAV_NEW_ORDER", "New order"],
+  ["NAV_BILLS", "Bill summary"],
+  ["NAV_JOBS", "Kitchen / job / repair cards"],
+  ["NAV_GALLERY", "Gallery"],
+  ["NAV_EMPLOYEES", "Employees"],
+  ["NAV_CATALOG", "Catalog"],
+  ["NAV_REPORTS", "Reports"],
+  ["NAV_NOTIFICATIONS", "Notifications"],
+  ["NAV_INTEGRATIONS", "Integrations"],
+] as const;
+const THEME_OPTIONS = [
+  ["bakery-rose", "Floral Patisserie", "Rose, vanilla and floral warmth"],
+  ["aqua-flow", "Aqua Flow", "Clean water blues and fluid accents"],
+  ["electric-spark", "Electric Spark", "Vibrant violet, navy and energy yellow"],
+  ["dairy-sky", "Dairy Fresh", "Fresh sky blue and creamy white"],
+  ["tailor-indigo", "Tailor Studio", "Textile indigo and warm thread"],
+  ["mobile-neon", "Mobile Neon", "Modern graphite with cyan highlights"],
+  ["service-green", "Service Green", "Calm, professional service palette"],
+] as const;
+const DOMAIN_DEFAULTS: Record<string, { prefix: string; theme: string }> = {
+  BAKERY: { prefix: "CS", theme: "bakery-rose" },
+  WATER_SERVICE: { prefix: "AMC", theme: "aqua-flow" },
+  ELECTRICAL: { prefix: "EL", theme: "electric-spark" },
+  DAIRY: { prefix: "DY", theme: "dairy-sky" },
+  TAILOR: { prefix: "TL", theme: "tailor-indigo" },
+  MOBILE_SERVICE: { prefix: "MB", theme: "mobile-neon" },
+  AC_SERVICE: { prefix: "AMC", theme: "service-green" },
+  GENERAL: { prefix: "AMC", theme: "service-green" },
+};
+
 export function AdminTenantsPage({ user }: { user: User }) {
   const [tenants, setTenants] = useState<Array<Record<string, unknown>>>([]),
     [logoFile, setLogoFile] = useState<File | null>(null),
     [open, setOpen] = useState(false),
     [editingId, setEditingId] = useState<string | null>(null),
     [error, setError] = useState(""),
+    [salespeople, setSalespeople] = useState<Array<Record<string, unknown>>>([]),
+    [salesForm, setSalesForm] = useState({
+      displayName: "",
+      username: "",
+      password: "",
+    }),
     [branches, setBranches] = useState([
       {
         id: "",
@@ -1139,14 +1181,29 @@ export function AdminTenantsPage({ user }: { user: User }) {
       logoUrl: "",
       active: true,
       facebookSocialEnabled: false,
+      instagramSocialEnabled: false,
+      aiSocialEnabled: false,
       whatsappEnabled: false,
+      enabledTabs: TENANT_TABS.map(([code]) => code) as string[],
       ownerName: "",
       ownerUsername: "",
       ownerPassword: "",
     });
   useEffect(() => {
     api.tenants(user.token).then(setTenants);
+    if (user.role === "ADMIN") api.salespeople(user.token).then(setSalespeople);
   }, [user.token]);
+  useEffect(() => {
+    if (!open) return;
+    const previousTheme = document.documentElement.dataset.theme;
+    const previousDomain = document.documentElement.dataset.domain;
+    document.documentElement.dataset.theme = form.themeKey;
+    document.documentElement.dataset.domain = form.domain;
+    return () => {
+      document.documentElement.dataset.theme = previousTheme;
+      document.documentElement.dataset.domain = previousDomain;
+    };
+  }, [open, form.themeKey, form.domain]);
   async function create(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -1190,7 +1247,12 @@ export function AdminTenantsPage({ user }: { user: User }) {
       logoUrl: String(t.logo_url || ""),
       active: Boolean(t.active),
       facebookSocialEnabled: Boolean(t.facebook_social_enabled),
+      instagramSocialEnabled: Boolean(t.instagram_social_enabled),
+      aiSocialEnabled: Boolean(t.ai_social_enabled),
       whatsappEnabled: Boolean(t.whatsapp_enabled),
+      enabledTabs: ((t.enabled_features as string[]) || []).filter((feature) =>
+        feature.startsWith("NAV_"),
+      ),
       ownerName: "",
       ownerUsername: "",
       ownerPassword: "",
@@ -1208,12 +1270,46 @@ export function AdminTenantsPage({ user }: { user: User }) {
     );
     setOpen(true);
   }
+  async function addSalesperson(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    try {
+      const created = await api.createSalesperson(salesForm, user.token);
+      setSalespeople((current) => [created, ...current]);
+      setSalesForm({ displayName: "", username: "", password: "" });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unable to create salesperson");
+    }
+  }
+  async function toggleSalesperson(person: Record<string, unknown>) {
+    setError("");
+    try {
+      const updated = await api.updateSalesperson(
+        String(person.id),
+        {
+          displayName: String(person.displayName),
+          active: !Boolean(person.active),
+          newPassword: null,
+        },
+        user.token,
+      );
+      setSalespeople((current) =>
+        current.map((item) =>
+          String(item.id) === String(person.id) ? updated : item,
+        ),
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unable to update salesperson");
+    }
+  }
   return (
     <div className="standard-page">
       <div className="page-intro">
         <div>
-          <span className="eyebrow">PLATFORM ADMINISTRATION</span>
-          <h1>Companies & themes</h1>
+          <span className="eyebrow">
+            {user.role === "ADMIN" ? "PLATFORM ADMINISTRATION" : "CUSTOMER ONBOARDING"}
+          </span>
+          <h1>Companies, access & themes</h1>
           <p>
             Each shop has isolated data, branches and a domain-specific theme
             stored in PostgreSQL.
@@ -1223,6 +1319,25 @@ export function AdminTenantsPage({ user }: { user: User }) {
           className="primary"
           onClick={() => {
             setEditingId(null);
+            setForm({
+              code: "",
+              name: "",
+              domain: "BAKERY",
+              domainPrefix: "CS",
+              documentCode: "",
+              themeKey: "bakery-rose",
+              logoUrl: "",
+              active: true,
+              facebookSocialEnabled: false,
+              instagramSocialEnabled: false,
+              aiSocialEnabled: false,
+              whatsappEnabled: false,
+              enabledTabs: TENANT_TABS.map(([code]) => code),
+              ownerName: "",
+              ownerUsername: "",
+              ownerPassword: "",
+            });
+            setBranches([{ id: "", code: "", documentCode: "L", name: "", address: "", phone: "", active: true }]);
             setOpen(!open);
           }}
         >
@@ -1258,22 +1373,18 @@ export function AdminTenantsPage({ user }: { user: User }) {
               Business domain
               <select
                 value={form.domain}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    domain: e.target.value,
-                    domainPrefix: e.target.value === "BAKERY" ? "CS" : "AMC",
-                    themeKey:
-                      e.target.value === "BAKERY"
-                        ? "bakery-rose"
-                        : "service-green",
-                  })
-                }
+                onChange={(e) => {
+                  const defaults = DOMAIN_DEFAULTS[e.target.value];
+                  setForm({ ...form, domain: e.target.value, domainPrefix: defaults.prefix, themeKey: defaults.theme });
+                }}
               >
                 <option value="BAKERY">Bakery / Cake shop</option>
                 <option value="WATER_SERVICE">Water purifier</option>
+                <option value="ELECTRICAL">Electrical shop</option>
                 <option value="AC_SERVICE">AC service</option>
                 <option value="DAIRY">Dairy</option>
+                <option value="TAILOR">Tailor</option>
+                <option value="MOBILE_SERVICE">Mobile shop / repair</option>
                 <option value="GENERAL">General</option>
               </select>
             </label>
@@ -1283,9 +1394,11 @@ export function AdminTenantsPage({ user }: { user: User }) {
                 value={form.themeKey}
                 onChange={(e) => setForm({ ...form, themeKey: e.target.value })}
               >
-                <option value="bakery-rose">Patisserie Rose</option>
-                <option value="service-green">Service Green</option>
+                {THEME_OPTIONS.map(([value, label]) => (
+                  <option value={value} key={value}>{label}</option>
+                ))}
               </select>
+              <small>{THEME_OPTIONS.find(([value]) => value === form.themeKey)?.[2]}</small>
             </label>
             <label className="switch-label">
               <input
@@ -1303,7 +1416,23 @@ export function AdminTenantsPage({ user }: { user: User }) {
                   setForm({ ...form, facebookSocialEnabled: e.target.checked })
                 }
               />
-              Facebook / AI Social package purchased
+              Facebook publishing package purchased
+            </label>
+            <label className="switch-label feature-toggle">
+              <input
+                type="checkbox"
+                checked={form.instagramSocialEnabled}
+                onChange={(e) => setForm({ ...form, instagramSocialEnabled: e.target.checked })}
+              />
+              Instagram package purchased
+            </label>
+            <label className="switch-label feature-toggle">
+              <input
+                type="checkbox"
+                checked={form.aiSocialEnabled}
+                onChange={(e) => setForm({ ...form, aiSocialEnabled: e.target.checked })}
+              />
+              AI content package purchased
             </label>
             <label className="switch-label feature-toggle">
               <input
@@ -1352,6 +1481,29 @@ export function AdminTenantsPage({ user }: { user: User }) {
               </>
             )}
           </div>
+          <section className="tenant-feature-panel">
+            <div>
+              <h3>Owner workspace menu</h3>
+              <p>Only selected tabs will appear for this shop. Electrical shops show Repair Cards when the job-card tab is enabled.</p>
+            </div>
+            <div className="tenant-feature-grid">
+              {TENANT_TABS.map(([code, label]) => (
+                <label className="switch-label feature-toggle" key={code}>
+                  <input
+                    type="checkbox"
+                    checked={form.enabledTabs.includes(code)}
+                    onChange={(e) => setForm({
+                      ...form,
+                      enabledTabs: e.target.checked
+                        ? [...form.enabledTabs, code]
+                        : form.enabledTabs.filter((item) => item !== code),
+                    })}
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </section>
           <div className="branch-config-head">
             <div>
               <h3>Branches & document codes</h3>
@@ -1506,6 +1658,32 @@ export function AdminTenantsPage({ user }: { user: User }) {
             </button>
           </div>
         </form>
+      )}
+      {user.role === "ADMIN" && (
+        <section className="content-card salesperson-admin">
+          <div>
+            <span className="eyebrow">SALES TEAM ACCESS</span>
+            <h2>Salesperson demonstration accounts</h2>
+            <p>Salespeople can onboard and demonstrate shops, but never see the Admin Setup menu or manage other salesperson accounts.</p>
+          </div>
+          <form onSubmit={addSalesperson} className="salesperson-form">
+            <input required placeholder="Salesperson name" value={salesForm.displayName} onChange={(e) => setSalesForm({ ...salesForm, displayName: e.target.value })} />
+            <input required placeholder="User ID" value={salesForm.username} onChange={(e) => setSalesForm({ ...salesForm, username: e.target.value })} />
+            <input required minLength={8} type="password" placeholder="Temporary password" value={salesForm.password} onChange={(e) => setSalesForm({ ...salesForm, password: e.target.value })} />
+            <button className="primary"><Plus /> Add salesperson</button>
+          </form>
+          <div className="salesperson-list">
+            {salespeople.map((person) => (
+              <div key={String(person.id)}>
+                <span><strong>{String(person.displayName)}</strong><small>{String(person.username)}</small></span>
+                <span className="salesperson-actions">
+                  <span className={person.active ? "status-pill paid" : "status-pill"}>{person.active ? "Active" : "Disabled"}</span>
+                  <button type="button" onClick={() => toggleSalesperson(person)}>{person.active ? "Disable" : "Enable"}</button>
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
       <div className="admin-grid">
         {tenants.map((t) => (

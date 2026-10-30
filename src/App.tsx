@@ -185,7 +185,14 @@ function Login({ onLogin }: { onLogin: (u: User) => void }) {
 }
 
 function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
-  const [page, setPage] = useState(user.role === "ADMIN" ? "admin" : "order");
+  const platformUser = user.role === "ADMIN" || user.role === "SALESPERSON";
+  const [page, setPage] = useState(
+    user.role === "ADMIN"
+      ? "admin"
+      : user.role === "SALESPERSON"
+        ? "onboarding"
+        : "order",
+  );
   const [drawer, setDrawer] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
   const [shopLogoUrl, setShopLogoUrl] = useState("");
@@ -194,7 +201,7 @@ function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
   >([]);
   const [selectedTenantId, setSelectedTenantId] = useState("");
   useEffect(() => {
-    if (user.role === "ADMIN") api.tenants(user.token).then(setAdminTenants);
+    if (platformUser) api.tenants(user.token).then(setAdminTenants);
   }, [user.role, user.token]);
   const selectedTenant = adminTenants.find(
     (t) => String(t.id) === selectedTenantId,
@@ -208,6 +215,7 @@ function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
         facebookSocialEnabled: Boolean(selectedTenant.facebookSocialEnabled),
         whatsappEnabled: Boolean(selectedTenant.whatsappEnabled),
         logoAvailable: Boolean(selectedTenant.logoAvailable),
+        enabledFeatures: (selectedTenant.enabledFeatures as string[]) || [],
       }
     : user;
   useEffect(() => {
@@ -216,10 +224,10 @@ function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
       document.documentElement.dataset.theme = String(selectedTenant.themeKey);
       document.documentElement.dataset.domain = String(selectedTenant.domain);
       setPage("order");
-    } else if (user.role === "ADMIN") {
+    } else if (platformUser) {
       document.documentElement.dataset.theme = "service-green";
       document.documentElement.dataset.domain = "PLATFORM";
-      setPage("admin");
+      setPage(user.role === "ADMIN" ? "admin" : "onboarding");
     }
   }, [selectedTenantId]);
   useEffect(() => {
@@ -242,28 +250,43 @@ function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
       if (url) URL.revokeObjectURL(url);
     };
   }, [user.token, selectedTenantId, workspaceUser.logoAvailable]);
+  const featureEnabled = (feature: string) =>
+    !workspaceUser.enabledFeatures ||
+    workspaceUser.enabledFeatures.includes(feature);
+  const jobLabel =
+    workspaceUser.domain === "BAKERY"
+      ? "Kitchen jobs"
+      : workspaceUser.domain === "ELECTRICAL"
+        ? "Repair cards"
+        : "Job cards";
   const workspaceNav: Array<[string, string, LucideIcon]> = [
-    ["order", "New order", Plus],
-    ["bills", "Bill summary", ClipboardList],
-    [
-      "jobs",
-      workspaceUser.domain === "BAKERY" ? "Kitchen jobs" : "Job cards",
-      ChefHat,
-    ],
-    [
-      "gallery",
-      workspaceUser.domain === "BAKERY" ? "Cake gallery" : "Gallery",
-      ImagePlus,
-    ],
+    ...(featureEnabled("NAV_NEW_ORDER")
+      ? [["order", "New order", Plus] as [string, string, LucideIcon]]
+      : []),
+    ...(featureEnabled("NAV_BILLS")
+      ? [["bills", "Bill summary", ClipboardList] as [string, string, LucideIcon]]
+      : []),
+    ...(featureEnabled("NAV_JOBS")
+      ? [["jobs", jobLabel, ChefHat] as [string, string, LucideIcon]]
+      : []),
+    ...(featureEnabled("NAV_GALLERY")
+      ? [[
+          "gallery",
+          workspaceUser.domain === "BAKERY" ? "Cake gallery" : "Gallery",
+          ImagePlus,
+        ] as [string, string, LucideIcon]]
+      : []),
     ...(user.role === "EMPLOYEE"
       ? []
       : ([
-          ["employees", "Employees", Users],
-          ["catalog", "Catalog", Package],
-          ["reports", "Reports", FileBarChart],
-          ["notifications", "Notifications", Bell],
-          ["integrations", "Integrations", Settings],
-          ...(workspaceUser.facebookSocialEnabled
+          ...(featureEnabled("NAV_EMPLOYEES") ? [["employees", "Employees", Users]] : []),
+          ...(featureEnabled("NAV_CATALOG") ? [["catalog", "Catalog", Package]] : []),
+          ...(featureEnabled("NAV_REPORTS") ? [["reports", "Reports", FileBarChart]] : []),
+          ...(featureEnabled("NAV_NOTIFICATIONS") ? [["notifications", "Notifications", Bell]] : []),
+          ...(featureEnabled("NAV_INTEGRATIONS") ? [["integrations", "Integrations", Settings]] : []),
+          ...(workspaceUser.enabledFeatures?.some((feature) =>
+            ["FACEBOOK_SOCIAL", "INSTAGRAM_SOCIAL", "AI_SOCIAL"].includes(feature),
+          ) || workspaceUser.facebookSocialEnabled
             ? [
                 ["social", "AI Social", Facebook] as [
                   string,
@@ -275,14 +298,21 @@ function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
         ] as Array<[string, string, LucideIcon]>)),
   ];
   const nav: Array<[string, string, LucideIcon]> =
-    user.role === "ADMIN"
+    platformUser
       ? [
           ...(selectedTenantId ? workspaceNav : []),
-          ["admin", "Admin setup", Settings],
+          user.role === "ADMIN"
+            ? ["admin", "Admin setup", Settings]
+            : ["onboarding", "Customer onboarding", Users],
         ]
       : workspaceNav;
+  useEffect(() => {
+    if (!nav.some(([id]) => id === page) && nav.length) setPage(nav[0][0]);
+  }, [selectedTenantId, workspaceUser.enabledFeatures?.join(","), page]);
   const content =
-    page === "order" ? (
+    nav.length === 0 ? (
+      <ComingSoon title="No workspace modules are enabled for this shop" />
+    ) : page === "order" ? (
       <OrderFlow user={workspaceUser} />
     ) : page === "bills" ? (
       <BillsPage user={workspaceUser} />
@@ -302,7 +332,7 @@ function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
       <IntegrationsPage user={workspaceUser} />
     ) : page === "social" ? (
       <SocialPage user={workspaceUser} />
-    ) : page === "admin" ? (
+    ) : page === "admin" || page === "onboarding" ? (
       <AdminTenantsPage user={user} />
     ) : (
       <ComingSoon title="Coming soon" />
@@ -342,11 +372,11 @@ function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
           <div>
             <strong>{workspaceUser.tenantName}</strong>
             <span>
-              {user.role === "ADMIN" ? "Platform access" : "Owner workspace"}
+              {platformUser ? "Platform access" : "Owner workspace"}
             </span>
           </div>
         </div>
-        {user.role === "ADMIN" && (
+        {platformUser && (
           <label className="tenant-context">
             <span>Manage shop</span>
             <select

@@ -17,6 +17,11 @@ import type { User } from "./types";
 type Preview = { file: File; url: string; kind: "image" | "video" };
 
 export function SocialPage({ user }: { user: User }) {
+  const facebookEnabled =
+    user.facebookSocialEnabled ||
+    user.enabledFeatures?.includes("FACEBOOK_SOCIAL");
+  const instagramEnabled = user.enabledFeatures?.includes("INSTAGRAM_SOCIAL");
+  const aiEnabled = user.enabledFeatures?.includes("AI_SOCIAL");
   const input = useRef<HTMLInputElement>(null);
   const [connected, setConnected] = useState(false);
   const [pageName, setPageName] = useState("");
@@ -26,6 +31,10 @@ export function SocialPage({ user }: { user: User }) {
   const [files, setFiles] = useState<Preview[]>([]);
   const [message, setMessage] = useState("");
   useEffect(() => {
+    if (!facebookEnabled) {
+      setLoading(false);
+      return () => files.forEach((x) => URL.revokeObjectURL(x.url));
+    }
     api
       .socialStatus(user.token)
       .then((s) => {
@@ -35,7 +44,7 @@ export function SocialPage({ user }: { user: User }) {
       .catch(() => setConnected(false))
       .finally(() => setLoading(false));
     return () => files.forEach((x) => URL.revokeObjectURL(x.url));
-  }, []);
+  }, [facebookEnabled]);
   const hasVideo = files.some((x) => x.kind === "video");
   const size = useMemo(
     () => files.reduce((n, x) => n + x.file.size, 0),
@@ -103,20 +112,27 @@ export function SocialPage({ user }: { user: User }) {
           <span className="eyebrow">AI SOCIAL</span>
           <h1>Turn everyday work into stories</h1>
           <p>
-            Upload shop photos or a short video and share them directly to your
-            Facebook Page.
+            Upload shop photos or a short video. Purchased publishing and AI
+            services stay isolated to this shop.
           </p>
+          <div className="social-entitlements">
+            {facebookEnabled && <span>Facebook active</span>}
+            {instagramEnabled && <span>Instagram active</span>}
+            {aiEnabled && <span>AI content active</span>}
+          </div>
         </div>
         <div className={connected ? "connection connected" : "connection"}>
           <Facebook size={19} />
           <span>
             {loading
               ? "Checking…"
-              : connected
+              : !facebookEnabled
+                ? "Facebook package not selected"
+                : connected
                 ? `Connected · ${pageName}`
                 : "Facebook not connected"}
           </span>
-          {!loading && !connected && <button onClick={connect}>Connect</button>}
+          {!loading && facebookEnabled && !connected && <button onClick={connect}>Connect</button>}
         </div>
       </div>
       <div className="social-layout">
@@ -127,7 +143,7 @@ export function SocialPage({ user }: { user: User }) {
             </div>
             <div>
               <h2>Create a Facebook post</h2>
-              <p>AI caption and 30-second video generation are coming next.</p>
+              <p>{aiEnabled ? "AI 30-second generation is ready for the next integration phase." : "Facebook images and short-video publishing."}</p>
             </div>
           </div>
           <button
@@ -201,7 +217,7 @@ export function SocialPage({ user }: { user: User }) {
             )}
             <button
               className="primary"
-              disabled={!connected || !files.length || publishing}
+              disabled={!facebookEnabled || !connected || !files.length || publishing}
               onClick={publish}
             >
               {publishing ? <LoaderCircle className="spin" /> : <Send />}

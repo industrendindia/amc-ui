@@ -555,7 +555,7 @@ export function ReportsPage({ user }: { user: User }) {
         </section>
         <section className="content-card">
           <h2>
-            <Users /> Chef workload
+            <Users /> {user.domain === "BAKERY" ? "Chef" : "Service team"} workload
           </h2>
           {chefs.map((r, i) => (
             <div className="report-row" key={i}>

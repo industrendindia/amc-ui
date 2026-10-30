@@ -1,4 +1,4 @@
-export type Role = "OWNER" | "ADMIN" | "EMPLOYEE";
+export type Role = "OWNER" | "ADMIN" | "EMPLOYEE" | "SALESPERSON";
 export type User = {
   token: string;
   displayName: string;
@@ -10,6 +10,7 @@ export type User = {
   facebookSocialEnabled?: boolean;
   whatsappEnabled?: boolean;
   logoAvailable?: boolean;
+  enabledFeatures?: string[];
 };
 export type Customer = {
   id?: string;
