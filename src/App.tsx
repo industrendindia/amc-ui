@@ -309,14 +309,20 @@ function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
     );
   return (
     <div className="app-shell">
-      <aside className={drawer ? "sidebar open" : "sidebar"}>
+      <aside
+        className={`${drawer ? "sidebar open" : "sidebar"}${
+          user.role === "OWNER" ? " owner-sidebar" : ""
+        }`}
+      >
         <div className="side-head">
-          <div className="brand">
-            <span className="brand-mark small">
-              <Sparkles size={17} />
-            </span>
-            <span>SevaSetu</span>
-          </div>
+          {user.role !== "OWNER" && (
+            <div className="brand">
+              <span className="brand-mark small">
+                <Sparkles size={17} />
+              </span>
+              <span>SevaSetu</span>
+            </div>
+          )}
           <button className="icon-btn close" onClick={() => setDrawer(false)}>
             <X />
           </button>
