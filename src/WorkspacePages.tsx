@@ -1129,13 +1129,28 @@ const TENANT_TABS = [
   ["NAV_INTEGRATIONS", "Integrations"],
 ] as const;
 const THEME_OPTIONS = [
-  ["bakery-rose", "Floral Patisserie", "Rose, vanilla and floral warmth"],
-  ["aqua-flow", "Aqua Flow", "Clean water blues and fluid accents"],
-  ["electric-spark", "Electric Spark", "Vibrant violet, navy and energy yellow"],
-  ["dairy-sky", "Dairy Fresh", "Fresh sky blue and creamy white"],
-  ["tailor-indigo", "Tailor Studio", "Textile indigo and warm thread"],
-  ["mobile-neon", "Mobile Neon", "Modern graphite with cyan highlights"],
-  ["service-green", "Service Green", "Calm, professional service palette"],
+  ["bakery-rose", "Floral Patisserie", "Rose, vanilla and celebration florals", "BAKERY", "#8f3f50,#d99078,#fffaf5"],
+  ["bakery-chocolate", "Chocolate Boutique", "Cocoa, ganache and champagne gold", "BAKERY", "#4a2d26,#b77a50,#fff6e8"],
+  ["bakery-confetti", "Candy Confetti", "Berry, frosting pink and playful mint", "BAKERY", "#a32d67,#ef8eb4,#e9fff7"],
+  ["aqua-flow", "Aqua Flow", "Clean water blues and fluid accents", "WATER_SERVICE", "#087ca7,#18a6b8,#f7fcfe"],
+  ["aqua-lagoon", "Pure Lagoon", "Deep teal, turquoise and bright foam", "WATER_SERVICE", "#006b68,#2eb8aa,#f0fffc"],
+  ["aqua-mineral", "Mineral Mist", "Slate blue, mineral aqua and cool white", "WATER_SERVICE", "#456b82,#78b8c8,#f6fbfc"],
+  ["electric-spark", "Electric Spark", "Violet, navy and energy yellow", "ELECTRICAL", "#7048e8,#f2b705,#fbfaff"],
+  ["electric-midnight", "Voltage Night", "Midnight blue, electric cyan and lime", "ELECTRICAL", "#14305c,#00a9c7,#d6f04c"],
+  ["electric-solar", "Solar Pulse", "Graphite, solar orange and warm yellow", "ELECTRICAL", "#34323a,#f47721,#ffd34d"],
+  ["dairy-sky", "Dairy Fresh", "Fresh sky blue and creamy white", "DAIRY", "#3485b8,#9ed5eb,#fffefa"],
+  ["dairy-meadow", "Meadow Morning", "Pasture green, sky and clean white", "DAIRY", "#39835b,#83c995,#f8fff7"],
+  ["dairy-cream", "Warm Creamery", "Butter cream, caramel and soft blue", "DAIRY", "#8b633d,#e5b85c,#fff9e9"],
+  ["tailor-indigo", "Tailor Studio", "Textile indigo and warm thread", "TAILOR", "#5353a3,#d58562,#fdfbf8"],
+  ["tailor-plum", "Couture Plum", "Plum fabric, blush and antique gold", "TAILOR", "#753657,#cf7891,#d5a84d"],
+  ["tailor-linen", "Linen Atelier", "Natural linen, olive and terracotta", "TAILOR", "#5c6747,#bf7659,#fbf6eb"],
+  ["mobile-neon", "Mobile Neon", "Graphite with cyan highlights", "MOBILE_SERVICE", "#007f8f,#23c4ce,#f8fbfb"],
+  ["mobile-graphite", "Graphite Pro", "Premium charcoal, steel and signal blue", "MOBILE_SERVICE", "#27323a,#477b9e,#eef4f7"],
+  ["mobile-violet", "Pixel Violet", "Digital violet, magenta and cool white", "MOBILE_SERVICE", "#613bb7,#d14f9a,#faf7ff"],
+  ["service-green", "Service Green", "Calm professional service palette", "AC_SERVICE", "#0c5c48,#6fb59c,#fbfaf5"],
+  ["ac-arctic", "Arctic Air", "Icy blue, cobalt and snow white", "AC_SERVICE", "#266fa3,#7ac7df,#f7fcff"],
+  ["ac-breeze", "Cool Breeze", "Mint breeze, teal and cloud white", "AC_SERVICE", "#087b77,#72cabb,#f4fffc"],
+  ["service-green", "Service Green", "Calm professional service palette", "GENERAL", "#0c5c48,#6fb59c,#fbfaf5"],
 ] as const;
 const DOMAIN_DEFAULTS: Record<string, { prefix: string; theme: string }> = {
   BAKERY: { prefix: "CS", theme: "bakery-rose" },
@@ -1388,18 +1403,27 @@ export function AdminTenantsPage({ user }: { user: User }) {
                 <option value="GENERAL">General</option>
               </select>
             </label>
-            <label>
-              Theme
-              <select
-                value={form.themeKey}
-                onChange={(e) => setForm({ ...form, themeKey: e.target.value })}
-              >
-                {THEME_OPTIONS.map(([value, label]) => (
-                  <option value={value} key={value}>{label}</option>
-                ))}
-              </select>
-              <small>{THEME_OPTIONS.find(([value]) => value === form.themeKey)?.[2]}</small>
-            </label>
+            <div className="full theme-picker">
+              <span>Theme direction</span>
+              <div className="theme-choice-grid">
+                {THEME_OPTIONS.filter(([, , , domain]) => domain === form.domain).map(
+                  ([value, label, description, , colors]) => (
+                    <button
+                      type="button"
+                      key={`${form.domain}-${value}`}
+                      className={form.themeKey === value ? "theme-choice active" : "theme-choice"}
+                      onClick={() => setForm({ ...form, themeKey: value })}
+                    >
+                      <span className="theme-swatches">
+                        {colors.split(",").map((color) => <i key={color} style={{ background: color }} />)}
+                      </span>
+                      <strong>{label}</strong>
+                      <small>{description}</small>
+                    </button>
+                  ),
+                )}
+              </div>
+            </div>
             <label className="switch-label">
               <input
                 type="checkbox"

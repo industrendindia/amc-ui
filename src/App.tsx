@@ -24,6 +24,24 @@ import {
   Wallet,
   X,
   ChefHat,
+  Candy,
+  PartyPopper,
+  Gift,
+  IceCreamBowl,
+  Droplets,
+  Waves,
+  GlassWater,
+  Zap,
+  PlugZap,
+  Lightbulb,
+  Milk,
+  Snowflake,
+  Scissors,
+  Shirt,
+  Ruler,
+  Smartphone,
+  TabletSmartphone,
+  Wrench,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { SocialPage } from "./SocialPage";
@@ -56,6 +74,27 @@ const money = (n: number) =>
     currency: "INR",
     maximumFractionDigits: 0,
   }).format(n);
+
+const DOMAIN_MOTIFS: Record<string, LucideIcon[]> = {
+  BAKERY: [BirthdayCake, Candy, PartyPopper, Gift, IceCreamBowl, Sparkles],
+  WATER_SERVICE: [Droplets, Waves, GlassWater, Sparkles, ShieldCheck, Droplets],
+  ELECTRICAL: [Zap, PlugZap, Lightbulb, Sparkles, Zap, Lightbulb],
+  DAIRY: [Milk, GlassWater, Snowflake, Sparkles, Milk, Snowflake],
+  TAILOR: [Scissors, Shirt, Ruler, Sparkles, Scissors, Shirt],
+  MOBILE_SERVICE: [Smartphone, TabletSmartphone, Wrench, Sparkles, Smartphone, Wrench],
+  AC_SERVICE: [Snowflake, Waves, Wrench, Sparkles, Snowflake, Waves],
+};
+
+function ThemeMotifs({ domain }: { domain?: string }) {
+  const motifs = DOMAIN_MOTIFS[domain || ""] || [Sparkles, Package, ShieldCheck];
+  return (
+    <div className="theme-motifs" aria-hidden="true">
+      {motifs.map((Icon, index) => (
+        <span key={index}><Icon /></span>
+      ))}
+    </div>
+  );
+}
 
 function Login({ onLogin }: { onLogin: (u: User) => void }) {
   const [username, setUsername] = useState("");
@@ -417,6 +456,7 @@ function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
       </aside>
       {drawer && <div className="scrim" onClick={() => setDrawer(false)} />}
       <main className="workspace">
+        <ThemeMotifs domain={workspaceUser.domain} />
         <header>
           <button className="icon-btn menu" onClick={() => setDrawer(true)}>
             <Menu />

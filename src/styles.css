@@ -70,6 +70,20 @@ html[data-theme="mobile-neon"] {
   --line: #d6e7e9;
   --muted: #627b80;
 }
+html[data-theme="bakery-chocolate"] { --ink:#432b24;--green:#70452f;--mint:#f4e3d4;--coral:#c78650;--cream:#fff8ed;--line:#ead8c7;--muted:#806c61;--shadow:0 16px 50px rgba(78,46,33,.12); }
+html[data-theme="bakery-confetti"] { --ink:#51233d;--green:#a32d67;--mint:#ddf5ec;--coral:#ef72a4;--cream:#fff8fc;--line:#ecd7e2;--muted:#806675;--shadow:0 16px 50px rgba(148,42,91,.11); }
+html[data-theme="aqua-lagoon"] { --ink:#153e3d;--green:#006b68;--mint:#d7f5ef;--coral:#2eb8aa;--cream:#f5fffc;--line:#c9e8e2;--muted:#5e7d79;--shadow:0 16px 50px rgba(0,107,104,.11); }
+html[data-theme="aqua-mineral"] { --ink:#263f4d;--green:#456b82;--mint:#e3f1f4;--coral:#63aebe;--cream:#f7fbfc;--line:#d4e4e8;--muted:#687c86;--shadow:0 16px 50px rgba(69,107,130,.1); }
+html[data-theme="electric-midnight"] { --ink:#182d4b;--green:#146b8a;--mint:#dff4f7;--coral:#b6cf2e;--cream:#f7fbfd;--line:#d3e4eb;--muted:#607487;--shadow:0 16px 50px rgba(20,48,92,.13); }
+html[data-theme="electric-solar"] { --ink:#373139;--green:#b64c18;--mint:#fff0d8;--coral:#f47721;--cream:#fffbf3;--line:#eadfce;--muted:#766c67;--shadow:0 16px 50px rgba(176,75,21,.12); }
+html[data-theme="dairy-meadow"] { --ink:#234533;--green:#39835b;--mint:#e2f5e6;--coral:#72b98a;--cream:#f9fff8;--line:#d5e9d9;--muted:#647c6c;--shadow:0 16px 50px rgba(57,131,91,.1); }
+html[data-theme="dairy-cream"] { --ink:#4b3927;--green:#8b633d;--mint:#f8ebc9;--coral:#d9a844;--cream:#fffaf0;--line:#eadfc7;--muted:#7c6d5c;--shadow:0 16px 50px rgba(139,99,61,.1); }
+html[data-theme="tailor-plum"] { --ink:#49283b;--green:#753657;--mint:#f2e0e8;--coral:#cf7891;--cream:#fff9fb;--line:#e8d7df;--muted:#7d6873;--shadow:0 16px 50px rgba(117,54,87,.11); }
+html[data-theme="tailor-linen"] { --ink:#3f4132;--green:#5c6747;--mint:#eee9d8;--coral:#bf7659;--cream:#fbf7ee;--line:#e4ddce;--muted:#777467;--shadow:0 16px 50px rgba(92,103,71,.1); }
+html[data-theme="mobile-graphite"] { --ink:#26343d;--green:#3e708f;--mint:#e2edf2;--coral:#569bc2;--cream:#f7fafb;--line:#d7e1e6;--muted:#687a83;--shadow:0 16px 50px rgba(39,50,58,.13); }
+html[data-theme="mobile-violet"] { --ink:#352653;--green:#613bb7;--mint:#ece5fb;--coral:#d14f9a;--cream:#fbf9ff;--line:#dfd8ef;--muted:#746987;--shadow:0 16px 50px rgba(97,59,183,.12); }
+html[data-theme="ac-arctic"] { --ink:#1d4058;--green:#266fa3;--mint:#e0f2f9;--coral:#65b7d0;--cream:#f7fcff;--line:#d1e6ef;--muted:#627d8c;--shadow:0 16px 50px rgba(38,111,163,.11); }
+html[data-theme="ac-breeze"] { --ink:#1c4745;--green:#087b77;--mint:#dcf4ef;--coral:#55bcae;--cream:#f5fffc;--line:#cee9e3;--muted:#607e79;--shadow:0 16px 50px rgba(8,123,119,.1); }
 html[data-domain="BAKERY"] body {
   background:
     radial-gradient(
@@ -111,6 +125,25 @@ html[data-theme="electric-spark"] .shop-logo {
 html[data-theme="dairy-sky"] .sidebar { background: linear-gradient(180deg, #245b7c, #3f91bf, #193f59); }
 html[data-theme="tailor-indigo"] .sidebar { background: linear-gradient(180deg, #303064, #5555a1, #27274f); }
 html[data-theme="mobile-neon"] .sidebar { background: linear-gradient(180deg, #122f36, #075d69, #102a30); }
+html[data-theme="bakery-chocolate"] .sidebar { background:linear-gradient(180deg,#3b251f,#70452f 58%,#2d1d19); }
+html[data-theme="bakery-confetti"] .sidebar { background:linear-gradient(180deg,#632342,#a32d67 58%,#45172e); }
+html[data-theme="aqua-lagoon"] .sidebar { background:linear-gradient(180deg,#064c4a,#007b77 58%,#043a39); }
+html[data-theme="aqua-mineral"] .sidebar { background:linear-gradient(180deg,#304d5e,#527d92 58%,#253d4b); }
+html[data-theme="electric-midnight"] .sidebar { background:linear-gradient(180deg,#101f3c,#174f78 58%,#0b172d); }
+html[data-theme="electric-solar"] .sidebar { background:linear-gradient(180deg,#302b31,#6b3730 58%,#211e22); }
+html[data-theme="dairy-meadow"] .sidebar { background:linear-gradient(180deg,#24533b,#438b60 58%,#1c402f); }
+html[data-theme="dairy-cream"] .sidebar { background:linear-gradient(180deg,#5b412b,#96704a 58%,#453121); }
+html[data-theme="tailor-plum"] .sidebar { background:linear-gradient(180deg,#4d263b,#7d3e60 58%,#361b2a); }
+html[data-theme="tailor-linen"] .sidebar { background:linear-gradient(180deg,#414833,#697451 58%,#303627); }
+html[data-theme="mobile-graphite"] .sidebar { background:linear-gradient(180deg,#202a30,#344b58 58%,#171f24); }
+html[data-theme="mobile-violet"] .sidebar { background:linear-gradient(180deg,#291b49,#603aa6 58%,#1c1333); }
+html[data-theme="ac-arctic"] .sidebar { background:linear-gradient(180deg,#174b70,#2d7ead 58%,#103751); }
+html[data-theme="ac-breeze"] .sidebar { background:linear-gradient(180deg,#07514e,#0b807a 58%,#043b39); }
+
+html[data-theme^="bakery-"] body { background:radial-gradient(circle at 88% 8%,color-mix(in srgb,var(--coral) 18%,transparent),transparent 25rem),var(--cream); }
+html[data-theme^="aqua-"] body,html[data-theme^="ac-"] body { background:radial-gradient(ellipse at 90% 0,color-mix(in srgb,var(--coral) 20%,transparent),transparent 34rem),var(--cream); }
+html[data-theme^="electric-"] body { background:linear-gradient(135deg,color-mix(in srgb,var(--green) 10%,transparent),transparent 32rem),var(--cream); }
+html[data-theme^="dairy-"] body,html[data-theme^="tailor-"] body,html[data-theme^="mobile-"] body { background:radial-gradient(circle at 92% 4%,color-mix(in srgb,var(--mint) 70%,transparent),transparent 28rem),var(--cream); }
 html[data-theme="bakery-rose"] .brand-mark {
   background: linear-gradient(145deg, #e6a484, #c56f72);
 }
@@ -518,7 +551,37 @@ h2 {
   margin-left: 260px;
   width: calc(100% - 260px);
   min-height: 100vh;
+  position: relative;
+  isolation: isolate;
 }
+.workspace > :not(.theme-motifs) { position: relative; z-index: 1; }
+.theme-motifs {
+  position: fixed;
+  inset: 72px 0 0 260px;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  color: var(--green);
+}
+.theme-motifs span {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border: 1px solid color-mix(in srgb, var(--green) 12%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--mint) 48%, transparent);
+  opacity: .24;
+  transform: rotate(-8deg);
+}
+.theme-motifs svg { width: 25px; height: 25px; stroke-width: 1.6; }
+.theme-motifs span:nth-child(1) { top: 5%; right: 4%; }
+.theme-motifs span:nth-child(2) { top: 25%; left: 2%; transform: rotate(10deg); }
+.theme-motifs span:nth-child(3) { top: 47%; right: 2%; transform: rotate(8deg); }
+.theme-motifs span:nth-child(4) { top: 68%; left: 4%; transform: rotate(-12deg); }
+.theme-motifs span:nth-child(5) { top: 84%; right: 7%; transform: rotate(12deg); }
+.theme-motifs span:nth-child(6) { top: 11%; left: 24%; width: 40px; height: 40px; }
 .workspace > header {
   height: 72px;
   background: rgba(251, 250, 245, 0.92);
@@ -1264,6 +1327,8 @@ h2 {
     margin: 0;
     width: 100%;
   }
+  .theme-motifs { inset:64px 0 0; }
+  .theme-motifs span { width:44px; height:44px; opacity:.18; }
   .catalog-layout,
   .payment-layout {
     grid-template-columns: 1fr;
@@ -1276,6 +1341,8 @@ h2 {
   }
 }
 @media (max-width: 620px) {
+  .theme-choice-grid { grid-template-columns:1fr; }
+  .theme-choice { min-height:0; }
   .login-panel {
     padding: 28px 22px;
     align-items: start;
@@ -1463,6 +1530,23 @@ h2 {
   border-radius: 10px;
   background: var(--cream);
 }
+.theme-picker > span { display:block; margin-bottom:9px; font-weight:600; }
+.theme-choice-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.theme-choice {
+  display:grid;
+  gap:7px;
+  min-height:116px;
+  padding:13px;
+  text-align:left;
+  border:1px solid var(--line);
+  background:white;
+}
+.theme-choice:hover { border-color:var(--green); transform:translateY(-1px); }
+.theme-choice.active { border-color:var(--green); box-shadow:0 0 0 3px color-mix(in srgb,var(--mint) 85%,transparent); }
+.theme-choice strong,.theme-choice small { display:block; }
+.theme-choice small { color:var(--muted); line-height:1.35; }
+.theme-swatches { display:flex; height:22px; overflow:hidden; border-radius:7px; }
+.theme-swatches i { flex:1; }
 .tenant-feature-panel {
   margin: 22px 0;
   padding: 18px;
