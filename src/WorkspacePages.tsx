@@ -446,21 +446,32 @@ export function JobCardsPage({ user }: { user: User }) {
             <span className="eyebrow">FILTERED {workTitle.toUpperCase()}</span>
             <h2>{totalJobs} jobs</h2>
           </div>
-          <button
-            className="text-btn"
-            onClick={() => {
-              setPage(0);
-              setSelectedStatuses([
-                "OPEN",
-                "ASSIGNED",
-                "IN_PROGRESS",
-                "READY",
-                "COMPLETED",
-              ]);
-            }}
-          >
-            Select all
-          </button>
+          <div className="job-filter-actions">
+            <button
+              className="text-btn"
+              onClick={() => {
+                setPage(0);
+                setSelectedStatuses([]);
+              }}
+            >
+              Uncheck all
+            </button>
+            <button
+              className="text-btn"
+              onClick={() => {
+                setPage(0);
+                setSelectedStatuses([
+                  "OPEN",
+                  "ASSIGNED",
+                  "IN_PROGRESS",
+                  "READY",
+                  "COMPLETED",
+                ]);
+              }}
+            >
+              Select all
+            </button>
+          </div>
         </div>
         <div className="job-results-grid">
           {cards.map((c) => (

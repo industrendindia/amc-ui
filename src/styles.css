@@ -2183,6 +2183,8 @@ h2 {
 .job-pagination svg {
   width: 15px;
 }
+.job-filter-actions { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:8px; }
+.job-filter-actions .text-btn { white-space:nowrap; }
 .branch-config-head {
   display: flex;
   justify-content: space-between;
