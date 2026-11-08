@@ -30,6 +30,8 @@ html[data-theme] .cake-kitchen-board>section{background:color-mix(in srgb,var(--
 html[data-theme] input,html[data-theme] textarea,html[data-theme] select{color:var(--ink);background:var(--surface);border-color:var(--line)}
 .catalogue-search-row{display:flex;align-items:center;justify-content:space-between;gap:12px}.catalogue-search-row .customer-search{flex:1;max-width:none;margin:0}.add-cake-button{flex:0 0 auto;min-height:48px}.catalog-form-heading{margin-bottom:18px}.catalog-form-heading h2,.cake-menu-heading h2{margin:0 0 5px}.catalog-form-heading p{margin:0;color:var(--muted)}.cake-menu-heading{margin:24px 0 10px}
 @media(max-width:600px){.catalogue-search-row{align-items:stretch;flex-direction:column}.add-cake-button{width:100%}}
+.catalog-mode-actions{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap}.catalog-mode-actions button{display:inline-flex;align-items:center;gap:7px}
+@media(max-width:650px){.catalog-mode-actions{width:100%;display:grid;grid-template-columns:1fr}.catalog-mode-actions button{justify-content:center;width:100%}}
 
 /* Owner-tested bakery workspace. Scoped so service, dairy and electrical themes stay unchanged. */
 [data-domain="BAKERY"] .bakery-experience h1,

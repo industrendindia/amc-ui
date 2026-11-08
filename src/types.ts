@@ -37,6 +37,7 @@ export type CatalogItem = {
   allergenNote?: string;
   featured?: boolean;
   imageAvailable?: boolean;
+  catalogGroup?: "CAKE" | "GENERAL";
 };
 export type CartLine = CatalogItem & { quantity: number; discount: number };
 export type Branch = {

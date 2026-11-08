@@ -25,6 +25,7 @@ export function CatalogManagementPage({ user }: { user: User }) {
   const [rows, setRows] = useState<Array<Record<string, unknown>>>([]),
     [editing, setEditing] = useState<string | null>(null),
     [open, setOpen] = useState(user.domain === "BAKERY"),
+    [catalogMode, setCatalogMode] = useState<"CAKE" | "GENERAL">("CAKE"),
     [error, setError] = useState("");
   const empty = {
     type: "PRODUCT",
@@ -40,6 +41,7 @@ export function CatalogManagementPage({ user }: { user: User }) {
     preparationOptions: "",
     allergenNote: "",
     featured: false,
+    catalogGroup: user.domain === "BAKERY" ? catalogMode : "GENERAL",
   };
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [form, setForm] = useState(empty);
@@ -67,7 +69,9 @@ export function CatalogManagementPage({ user }: { user: User }) {
       preparationOptions: String(row.preparation_options || ""),
       allergenNote: String(row.allergen_note || ""),
       featured: Boolean(row.featured),
+      catalogGroup: String(row.catalog_group) === "CAKE" ? "CAKE" : "GENERAL",
     });
+    if (user.domain === "BAKERY") setCatalogMode(String(row.catalog_group)==="CAKE"?"CAKE":"GENERAL");
     setOpen(true);
   }
   async function save(e: React.FormEvent) {
@@ -105,7 +109,7 @@ export function CatalogManagementPage({ user }: { user: User }) {
           <h1>{user.domain === "BAKERY" ? "Your menu, your creations." : "Products, services & packages"}</h1>
           <p>{user.domain === "BAKERY" ? "Add cakes with their own flavour, category, price and actual photo." : "Only this shop’s configured catalog appears during billing."}</p>
         </div>
-        {user.domain !== "BAKERY" && <button
+        {user.domain === "BAKERY" ? <div className="catalog-mode-actions"><button className={catalogMode==="CAKE"?"primary":"secondary"} onClick={()=>{setCatalogMode("CAKE");setEditing(null);setForm({...empty,catalogGroup:"CAKE",type:"PRODUCT"});setOpen(true)}}><PackagePlus/> Manage cakes</button><button className={catalogMode==="GENERAL"?"primary":"secondary"} onClick={()=>{setCatalogMode("GENERAL");setEditing(null);setForm({...empty,catalogGroup:"GENERAL"});setOpen(true)}}><PackagePlus/> Other products & services</button></div> : <button
           className="primary"
           onClick={() => {
             setEditing(null);
@@ -118,9 +122,9 @@ export function CatalogManagementPage({ user }: { user: User }) {
       </div>
       {open && (
         <form className="content-card employee-form" onSubmit={save}>
-          {user.domain === "BAKERY" && <div className="catalog-form-heading"><h2>{editing ? "Update cake details" : "Add a cake to the catalogue"}</h2><p>Cake information and photos are saved to this shop’s database.</p></div>}
+          {user.domain === "BAKERY" && <div className="catalog-form-heading"><h2>{catalogMode==="CAKE"?(editing ? "Update cake details" : "Add a cake to the catalogue"):(editing?"Update catalogue item":"Add a product, service or package")}</h2><p>{catalogMode==="CAKE"?"Cake information and photos are saved to this shop’s database.":"These items remain separate from the public cake catalogue and are available during billing."}</p></div>}
           <div className="form-grid">
-            {user.domain !== "BAKERY" && <label>
+            {(user.domain !== "BAKERY" || catalogMode === "GENERAL") && <label>
               Type
               <select
                 disabled={Boolean(editing)}
@@ -165,7 +169,7 @@ export function CatalogManagementPage({ user }: { user: User }) {
                 onChange={(e) => setForm({ ...form, price: e.target.value })}
               />
             </label>
-            {user.domain !== "BAKERY" && <label>
+            {(user.domain !== "BAKERY" || catalogMode === "GENERAL") && <label>
               Duration in months
               <input
                 type="number"
@@ -207,7 +211,7 @@ export function CatalogManagementPage({ user }: { user: User }) {
               ))}
             </div>
           )}
-          {user.domain === "BAKERY" && form.type !== "PACKAGE" && (
+          {user.domain === "BAKERY" && catalogMode === "CAKE" && form.type !== "PACKAGE" && (
             <div className="bakery-catalog-fields">
               <h3>Cake details</h3>
               <div className="form-grid">
@@ -231,18 +235,18 @@ export function CatalogManagementPage({ user }: { user: User }) {
               Cancel
             </button>}
             <button className="primary">
-              <Save /> {user.domain === "BAKERY" ? editing ? "Update cake" : "Add cake to catalogue" : "Save catalog item"}
+              <Save /> {user.domain === "BAKERY" && catalogMode==="CAKE" ? editing ? "Update cake" : "Add cake to catalogue" : "Save catalog item"}
             </button>
           </div>
         </form>
       )}
-      {user.domain === "BAKERY" && <div className="cake-menu-heading"><h2>{rows.filter(r=>r.type==="PRODUCT").length} cakes in your menu</h2></div>}
+      {user.domain === "BAKERY" && <div className="cake-menu-heading"><h2>{catalogMode==="CAKE"?`${rows.filter(r=>r.catalog_group==="CAKE").length} cakes in your menu`:"Other products, services & packages"}</h2></div>}
       <div className="catalog-admin-grid">
-        {(user.domain === "BAKERY" ? ["PRODUCT"] : ["PRODUCT", "SERVICE", "PACKAGE"]).map((type) => (
+        {(user.domain === "BAKERY" && catalogMode==="CAKE" ? ["PRODUCT"] : ["PRODUCT", "SERVICE", "PACKAGE"]).map((type) => (
           <section className="content-card" key={type}>
             <h2>{user.domain === "BAKERY" ? "Cakes" : type[0] + type.slice(1).toLowerCase()}</h2>
             {rows
-              .filter((r) => r.type === type)
+              .filter((r) => r.type === type && (user.domain !== "BAKERY" || (catalogMode==="CAKE"?r.catalog_group==="CAKE":r.catalog_group!=="CAKE")))
               .map((r) => (
                 <button
                   className="catalog-admin-row"
