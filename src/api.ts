@@ -109,6 +109,11 @@ export const api = {
       { method: id ? "PUT" : "POST", body: JSON.stringify(payload) },
       token,
     ),
+  uploadCatalogImage: async (id: string, file: File, token: string) => {
+    const body = new FormData(); body.append("file", file);
+    const res = await fetch(`/api/catalog/${id}/image`, { method: "POST", headers: { Authorization: `Bearer ${token}`, ...(adminTenantContext ? { "X-Tenant-Id": adminTenantContext } : {}) }, body });
+    if (!res.ok) throw new Error("Catalog saved, but the image could not be uploaded.");
+  },
   notificationSettings: (token: string) =>
     request<Record<string, unknown>>(
       "/owner/notifications/settings",
@@ -353,6 +358,10 @@ export const api = {
   },
   searchCustomers: (q: string, token: string) =>
     request<Customer[]>(`/customers?q=${encodeURIComponent(q)}`, {}, token),
+  updateCustomer: (id: string, customer: Customer, token: string) =>
+    request<Customer>(`/customers/${id}`, { method: "PUT", body: JSON.stringify(customer) }, token),
+  ownerDashboard: (period: string, token: string) =>
+    request<Record<string, unknown>>(`/owner/dashboard?period=${period}`, {}, token),
   socialStatus: async (token: string) =>
     request<{ connected: boolean; pageName?: string; pageId?: string }>(
       "/social/facebook/status",

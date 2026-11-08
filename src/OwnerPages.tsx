@@ -34,7 +34,14 @@ export function CatalogManagementPage({ user }: { user: User }) {
     durationMonths: "",
     active: true,
     includedItemIds: [] as string[],
+    category: "",
+    flavour: "",
+    unitLabel: "item",
+    preparationOptions: "",
+    allergenNote: "",
+    featured: false,
   };
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [form, setForm] = useState(empty);
   const load = () =>
     api
@@ -54,6 +61,12 @@ export function CatalogManagementPage({ user }: { user: User }) {
       durationMonths: String(row.duration_months || ""),
       active: Boolean(row.active),
       includedItemIds: (row.included_item_ids as string[]) || [],
+      category: String(row.category || ""),
+      flavour: String(row.flavour || ""),
+      unitLabel: String(row.unit_label || "item"),
+      preparationOptions: String(row.preparation_options || ""),
+      allergenNote: String(row.allergen_note || ""),
+      featured: Boolean(row.featured),
     });
     setOpen(true);
   }
@@ -61,7 +74,7 @@ export function CatalogManagementPage({ user }: { user: User }) {
     e.preventDefault();
     setError("");
     try {
-      await api.saveCatalogItem(
+      const saved = await api.saveCatalogItem(
         editing,
         {
           ...form,
@@ -72,9 +85,12 @@ export function CatalogManagementPage({ user }: { user: User }) {
         },
         user.token,
       );
+      const savedId = editing || String(saved?.id || "");
+      if (imageFile && savedId) await api.uploadCatalogImage(savedId, imageFile, user.token);
       setOpen(false);
       setEditing(null);
       setForm(empty);
+      setImageFile(null);
       load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to save item");
@@ -188,6 +204,20 @@ export function CatalogManagementPage({ user }: { user: User }) {
                   {String(i.name)} · {money(Number(i.price))}
                 </label>
               ))}
+            </div>
+          )}
+          {user.domain === "BAKERY" && form.type !== "PACKAGE" && (
+            <div className="bakery-catalog-fields">
+              <h3>Cake details</h3>
+              <div className="form-grid">
+                <label>Category<input value={form.category} onChange={(e)=>setForm({...form,category:e.target.value})} placeholder="Birthday, pastry, celebration" /></label>
+                <label>Flavour<input value={form.flavour} onChange={(e)=>setForm({...form,flavour:e.target.value})} placeholder="Chocolate, vanilla…" /></label>
+                <label>Price unit<input value={form.unitLabel} onChange={(e)=>setForm({...form,unitLabel:e.target.value})} placeholder="kg or item" /></label>
+                <label>Preparation options<input value={form.preparationOptions} onChange={(e)=>setForm({...form,preparationOptions:e.target.value})} placeholder="Egg, eggless" /></label>
+                <label className="full">Allergen note<input value={form.allergenNote} onChange={(e)=>setForm({...form,allergenNote:e.target.value})} placeholder="Contains dairy, nuts…" /></label>
+                <label className="full">Cake photo (max 2 MB)<input type="file" accept="image/*" onChange={(e)=>setImageFile(e.target.files?.[0] || null)} /></label>
+                <label className="switch-label"><input type="checkbox" checked={form.featured} onChange={(e)=>setForm({...form,featured:e.target.checked})}/> Feature in catalogue</label>
+              </div>
             </div>
           )}
           {error && <div className="error">{error}</div>}

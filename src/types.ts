@@ -19,6 +19,8 @@ export type Customer = {
   address: string;
   dob: string;
   anniversary: string;
+  marketingOptIn?: boolean;
+  orderUpdatesOptIn?: boolean;
 };
 export type CatalogItem = {
   id: string;
@@ -28,6 +30,13 @@ export type CatalogItem = {
   price: number;
   durationMonths?: number;
   badge?: string;
+  category?: string;
+  flavour?: string;
+  unitLabel?: string;
+  preparationOptions?: string;
+  allergenNote?: string;
+  featured?: boolean;
+  imageAvailable?: boolean;
 };
 export type CartLine = CatalogItem & { quantity: number; discount: number };
 export type Branch = {
