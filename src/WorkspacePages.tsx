@@ -328,7 +328,7 @@ export function EmployeesPage({ user }: { user: User }) {
 export function JobCardsPage({ user }: { user: User }) {
   const bakery = user.domain === "BAKERY";
   const electrical = user.domain === "ELECTRICAL";
-  const workTitle = bakery ? "Kitchen jobs" : electrical ? "Repair cards" : "Job cards";
+  const workTitle = bakery ? "Kitchen board" : electrical ? "Repair cards" : "Job cards";
   const workerLabel = bakery ? "chefs" : "technicians";
   const workerRole = bakery ? "CHEF" : "SERVICE";
   const [cards, setCards] = useState<Array<Record<string, unknown>>>([]),
@@ -354,6 +354,7 @@ export function JobCardsPage({ user }: { user: User }) {
         page,
         selectedStatuses.length ? selectedStatuses.join(",") : "NONE",
         user.token,
+        bakery ? 100 : 5,
       ),
       api.employees(user.token),
     ]).then(
@@ -473,8 +474,10 @@ export function JobCardsPage({ user }: { user: User }) {
             </button>
           </div>
         </div>
-        <div className="job-results-grid">
-          {cards.map((c) => (
+        <div className={bakery ? "kitchen-kanban" : "job-results-grid"}>
+          {(bakery ? ["OPEN", "ASSIGNED", "IN_PROGRESS", "READY", "COMPLETED"] : ["ALL"]).map((column) => <section className={bakery ? "kitchen-column" : "job-card-list-fragment"} key={column}>
+          {bakery && <header><span>{column.replaceAll("_", " ")}</span><strong>{cards.filter(c=>String(c.status)===column).length}</strong></header>}
+          {cards.filter(c=>column==="ALL"||String(c.status)===column).map((c) => (
             <button className="job-card" key={String(c.id)} onClick={() => view(String(c.id))}>
               <span className={`priority ${String(c.priority).toLowerCase()}`}>{String(c.priority)}</span>
               <h4>{String(c.title)}</h4>
@@ -485,10 +488,11 @@ export function JobCardsPage({ user }: { user: User }) {
               {Boolean(c.due_at) && <div><Clock3 /> {date(c.due_at)}</div>}
             </button>
           ))}
+          </section>)}
         </div>
         {cards.length === 0 && <p className="empty-state">No jobs match the selected statuses.</p>}
       </section>
-      {totalPages > 1 && <div className="pagination job-pagination">
+      {!bakery && totalPages > 1 && <div className="pagination job-pagination">
         <button disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
           <ChevronLeft /> Previous
         </button>
@@ -599,6 +603,7 @@ export function JobCardsPage({ user }: { user: User }) {
 }
 
 export function BillsPage({ user }: { user: User }) {
+  const bakery = user.domain === "BAKERY";
   const [page, setPage] = useState(0),
     [query, setQuery] = useState(""),
     [data, setData] = useState<{
@@ -748,8 +753,8 @@ export function BillsPage({ user }: { user: User }) {
     <div className="standard-page">
       <div className="page-intro">
         <div>
-          <span className="eyebrow">BILLS & FULFILMENT</span>
-          <h1>Bill summary</h1>
+          <span className="eyebrow">{bakery ? "ORDERS & FULFILMENT" : "BILLS & FULFILMENT"}</span>
+          <h1>{bakery ? "Orders & billing" : "Bill summary"}</h1>
           <p>
             Search, inspect payment history and track every order through
             delivery.
@@ -768,7 +773,7 @@ export function BillsPage({ user }: { user: User }) {
             placeholder="Search bill, customer or mobile"
           />
         </div>
-        <strong>{data.totalElements} bills</strong>
+        <strong>{data.totalElements} {bakery ? "orders" : "bills"}</strong>
       </div>
       <section className="content-card bill-list">
         {data.content.map((o) => {
@@ -1129,7 +1134,14 @@ function SecureImage({
 }
 
 const TENANT_TABS = [
+  ["NAV_SALES", "Bakery: Sales view"],
   ["NAV_NEW_ORDER", "New order"],
+  ["NAV_CAKE_CATALOGUE", "Bakery: Cake catalogue"],
+  ["NAV_ORDERS_BILLING", "Bakery: Orders & billing"],
+  ["NAV_KITCHEN_BOARD", "Bakery: Kitchen board"],
+  ["NAV_CUSTOMERS", "Bakery: Customers"],
+  ["NAV_MANAGE_CAKES", "Bakery: Manage cakes"],
+  ["NAV_WHATSAPP_CAMPAIGNS", "Bakery: WhatsApp campaigns"],
   ["NAV_BILLS", "Bill summary"],
   ["NAV_JOBS", "Kitchen / job / repair cards"],
   ["NAV_GALLERY", "Gallery"],

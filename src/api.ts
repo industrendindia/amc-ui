@@ -114,6 +114,11 @@ export const api = {
     const res = await fetch(`/api/catalog/${id}/image`, { method: "POST", headers: { Authorization: `Bearer ${token}`, ...(adminTenantContext ? { "X-Tenant-Id": adminTenantContext } : {}) }, body });
     if (!res.ok) throw new Error("Catalog saved, but the image could not be uploaded.");
   },
+  catalogImage: async (id: string, token: string) => {
+    const res = await fetch(`/api/catalog/${id}/image`, { headers: { Authorization: `Bearer ${token}`, ...(adminTenantContext ? { "X-Tenant-Id": adminTenantContext } : {}) } });
+    if (!res.ok) throw new Error("Unable to load cake image");
+    return res.blob();
+  },
   notificationSettings: (token: string) =>
     request<Record<string, unknown>>(
       "/owner/notifications/settings",
@@ -266,7 +271,7 @@ export const api = {
       { method: "PUT", body: JSON.stringify(payload) },
       token,
     ),
-  jobCards: (page: number, status: string, token: string) =>
+  jobCards: (page: number, status: string, token: string, size = 5) =>
     request<{
       content: Array<Record<string, unknown>>;
       page: number;
@@ -274,7 +279,7 @@ export const api = {
       totalElements: number;
       totalPages: number;
       statusCounts: Record<string, number>;
-    }>(`/job-cards?page=${page}&status=${encodeURIComponent(status)}`, {}, token),
+    }>(`/job-cards?page=${page}&size=${size}&status=${encodeURIComponent(status)}`, {}, token),
   jobCard: (id: string, token: string) =>
     request<Record<string, unknown>>(`/job-cards/${id}`, {}, token),
   assignChefs: (id: string, employeeIds: string[], token: string) =>
@@ -362,6 +367,17 @@ export const api = {
     request<Customer>(`/customers/${id}`, { method: "PUT", body: JSON.stringify(customer) }, token),
   ownerDashboard: (period: string, token: string) =>
     request<Record<string, unknown>>(`/owner/dashboard?period=${period}`, {}, token),
+  customCakeRequests: (token: string) =>
+    request<Array<Record<string, unknown>>>("/bakery/custom-cakes", {}, token),
+  createCustomCake: (payload: unknown, token: string) =>
+    request<{ id: string; status: string }>("/bakery/custom-cakes", { method: "POST", body: JSON.stringify(payload) }, token),
+  uploadCustomCakeReference: async (id: string, file: File, token: string) => {
+    const body = new FormData(); body.append("file", file);
+    const res = await fetch(`/api/bakery/custom-cakes/${id}/reference`, { method: "POST", headers: { Authorization: `Bearer ${token}`, ...(adminTenantContext ? { "X-Tenant-Id": adminTenantContext } : {}) }, body });
+    if (!res.ok) throw new Error("Request saved, but the reference image could not be uploaded.");
+  },
+  bakeryCampaigns: (token: string) => request<Record<string, unknown>>("/bakery/campaigns", {}, token),
+  createBakeryCampaign: (payload: unknown, token: string) => request<Record<string, unknown>>("/bakery/campaigns", { method: "POST", body: JSON.stringify(payload) }, token),
   socialStatus: async (token: string) =>
     request<{ connected: boolean; pageName?: string; pageId?: string }>(
       "/social/facebook/status",
