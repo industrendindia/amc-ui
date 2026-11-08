@@ -605,6 +605,7 @@ export function JobCardsPage({ user }: { user: User }) {
 export function BillsPage({ user }: { user: User }) {
   const bakery = user.domain === "BAKERY";
   const [page, setPage] = useState(0),
+    [orderView, setOrderView] = useState("OPEN"),
     [query, setQuery] = useState(""),
     [data, setData] = useState<{
       content: Array<Record<string, unknown>>;
@@ -629,11 +630,11 @@ export function BillsPage({ user }: { user: User }) {
     }),
     [deliveredFiles, setDeliveredFiles] = useState<File[]>([]),
     [mediaNotice, setMediaNotice] = useState("");
-  const load = () => api.orders(user.token, page, 10, query).then(setData);
+  const load = () => api.orders(user.token, page, 10, query, bakery ? orderView : "ALL").then(setData);
   useEffect(() => {
     const t = setTimeout(load, 250);
     return () => clearTimeout(t);
-  }, [user.token, page, query]);
+  }, [user.token, page, query, orderView]);
   async function toggle(id: string) {
     if (expanded === id) {
       setExpanded(null);
@@ -761,6 +762,7 @@ export function BillsPage({ user }: { user: User }) {
           </p>
         </div>
       </div>
+      {bakery && <div className="order-view-tabs">{[["OPEN","Open orders"],["CLOSED","Closed orders"],["CANCELLED","Cancelled orders"]].map(([id,label])=><button key={id} className={orderView===id?"active":""} onClick={()=>{setOrderView(id);setPage(0);setExpanded(null)}}>{label}</button>)}</div>}
       <div className="content-card bill-toolbar">
         <div className="searchbox">
           <Search />
@@ -790,6 +792,7 @@ export function BillsPage({ user }: { user: User }) {
                   <small>
                     {String(o.customer_name)} · {String(o.customer_phone)}
                   </small>
+                  {bakery && <small className="cake-order-name">{String(o.cake_names || "Custom cake")}</small>}
                 </span>
                 <span className="bill-due">
                   <small>Due</small>

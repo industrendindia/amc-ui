@@ -60,7 +60,7 @@ import {
   NotificationsPage,
   ReportsPage,
 } from "./OwnerPages";
-import { BakeryCampaignsPage, BakeryCataloguePage, BakeryCustomersPage, BakerySalesPage } from "./BakeryPages";
+import { BakeryCampaignsPage, BakeryCataloguePage, BakeryCustomersPage, BakeryKitchenBoard, BakerySalesPage } from "./BakeryPages";
 
 const emptyCustomer: Customer = {
   name: "",
@@ -300,19 +300,19 @@ function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
         ? "Repair cards"
         : "Job cards";
   const workspaceNav: Array<[string, string, LucideIcon]> = [
-    ...(workspaceUser.domain === "BAKERY" && featureEnabled("NAV_SALES")
+    ...(workspaceUser.domain === "BAKERY" && (featureEnabled("NAV_SALES") || featureEnabled("NAV_REPORTS"))
       ? [["sales", "Sales view", LayoutDashboard] as [string, string, LucideIcon]]
       : []),
     ...(featureEnabled("NAV_NEW_ORDER")
       ? [["order", workspaceUser.domain === "BAKERY" ? "Order request" : "New order", Plus] as [string, string, LucideIcon]]
       : []),
-    ...(workspaceUser.domain === "BAKERY" && featureEnabled("NAV_CAKE_CATALOGUE")
+    ...(workspaceUser.domain === "BAKERY" && (featureEnabled("NAV_CAKE_CATALOGUE") || featureEnabled("NAV_CATALOG"))
       ? [["cake-catalogue", "Cake catalogue", BirthdayCake] as [string, string, LucideIcon]]
       : []),
-    ...((workspaceUser.domain === "BAKERY" ? featureEnabled("NAV_ORDERS_BILLING") : featureEnabled("NAV_BILLS"))
+    ...((workspaceUser.domain === "BAKERY" ? featureEnabled("NAV_ORDERS_BILLING") || featureEnabled("NAV_BILLS") : featureEnabled("NAV_BILLS"))
       ? [["bills", workspaceUser.domain === "BAKERY" ? "Orders & billing" : "Bill summary", ClipboardList] as [string, string, LucideIcon]]
       : []),
-    ...((workspaceUser.domain === "BAKERY" ? featureEnabled("NAV_KITCHEN_BOARD") : featureEnabled("NAV_JOBS"))
+    ...((workspaceUser.domain === "BAKERY" ? featureEnabled("NAV_KITCHEN_BOARD") || featureEnabled("NAV_JOBS") : featureEnabled("NAV_JOBS"))
       ? [["jobs", workspaceUser.domain === "BAKERY" ? "Kitchen board" : jobLabel, ChefHat] as [string, string, LucideIcon]]
       : []),
     ...(featureEnabled("NAV_GALLERY")
@@ -327,7 +327,7 @@ function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
       : ([
           ...(featureEnabled("NAV_EMPLOYEES") ? [["employees", "Employees", Users]] : []),
           ...(workspaceUser.domain === "BAKERY" && featureEnabled("NAV_CUSTOMERS") ? [["customers", "Customers", Users]] : []),
-          ...((workspaceUser.domain === "BAKERY" ? featureEnabled("NAV_MANAGE_CAKES") : featureEnabled("NAV_CATALOG")) ? [["catalog", workspaceUser.domain === "BAKERY" ? "Manage cakes" : "Catalog", Package]] : []),
+          ...((workspaceUser.domain === "BAKERY" ? featureEnabled("NAV_MANAGE_CAKES") || featureEnabled("NAV_CATALOG") : featureEnabled("NAV_CATALOG")) ? [["catalog", workspaceUser.domain === "BAKERY" ? "Manage cakes" : "Catalog", Package]] : []),
           ...(workspaceUser.domain === "BAKERY" && featureEnabled("NAV_WHATSAPP_CAMPAIGNS") ? [["campaigns", "WhatsApp campaigns", Bell]] : []),
           ...(featureEnabled("NAV_REPORTS") ? [["reports", "Reports", FileBarChart]] : []),
           ...(featureEnabled("NAV_NOTIFICATIONS") ? [["notifications", "Notifications", Bell]] : []),
@@ -365,11 +365,11 @@ function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
     ) : page === "order" ? (
       <OrderFlow user={workspaceUser} />
     ) : page === "cake-catalogue" ? (
-      <BakeryCataloguePage user={workspaceUser} />
+      <BakeryCataloguePage user={workspaceUser} onManage={() => setPage("catalog")} />
     ) : page === "bills" ? (
       <BillsPage user={workspaceUser} />
     ) : page === "jobs" ? (
-      <JobCardsPage user={workspaceUser} />
+      workspaceUser.domain === "BAKERY" ? <BakeryKitchenBoard user={workspaceUser} /> : <JobCardsPage user={workspaceUser} />
     ) : page === "employees" ? (
       <EmployeesPage user={workspaceUser} />
     ) : page === "customers" ? (

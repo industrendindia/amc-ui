@@ -178,7 +178,7 @@ export const api = {
         "Order saved, but reference images could not be uploaded.",
       );
   },
-  orders: (token: string, page = 0, size = 10, q = "") =>
+  orders: (token: string, page = 0, size = 10, q = "", view = "ALL") =>
     request<{
       content: Array<Record<string, unknown>>;
       page: number;
@@ -186,7 +186,7 @@ export const api = {
       totalElements: number;
       totalPages: number;
     }>(
-      `/orders?page=${page}&size=${size}&q=${encodeURIComponent(q)}`,
+      `/orders?page=${page}&size=${size}&q=${encodeURIComponent(q)}&view=${view}`,
       {},
       token,
     ),
@@ -300,6 +300,13 @@ export const api = {
       { method: "PATCH" },
       token,
     ),
+  uploadFinalCakePhoto: async (id: string, file: File, token: string) => {
+    const body = new FormData(); body.append("file", file);
+    const res = await fetch(`/api/job-cards/${id}/final-photo`, { method: "POST", headers: { Authorization: `Bearer ${token}`, ...(adminTenantContext ? { "X-Tenant-Id": adminTenantContext } : {}) }, body });
+    if (!res.ok) throw new Error((await res.json().catch(()=>({message:"Photo upload failed"}))).message || "Photo upload failed");
+  },
+  qualityCheck: (id: string, payload: unknown, token: string) =>
+    request<void>(`/job-cards/${id}/quality-check`, { method: "POST", body: JSON.stringify(payload) }, token),
   tenants: (token: string) =>
     request<Array<Record<string, unknown>>>("/admin/tenants", {}, token),
   tenant: (id: string, token: string) =>
