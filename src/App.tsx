@@ -500,6 +500,8 @@ function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
   );
 }
 
+function CatalogThumbnail({item,token}:{item:CatalogItem;token:string}){const [url,setUrl]=useState("");useEffect(()=>{let local="";if(item.imageAvailable)api.catalogImage(item.id,token).then(blob=>{local=URL.createObjectURL(blob);setUrl(local)}).catch(()=>setUrl(""));return()=>{if(local)URL.revokeObjectURL(local)}},[item.id,item.imageAvailable,token]);return <div className={`product-icon ${item.type.toLowerCase()} ${url?"has-image":""}`}>{url?<img src={url} alt=""/>:<Package/>}</div>}
+
 function OrderFlow({ user }: { user: User }) {
   const [step, setStep] = useState(1);
   const [customer, setCustomer] = useState(emptyCustomer);
@@ -839,9 +841,7 @@ function OrderFlow({ user }: { user: User }) {
                 .map((item) => (
                   <article className="product-card" key={item.id}>
                     {item.badge && <span className="badge">{item.badge}</span>}
-                    <div className={`product-icon ${item.type.toLowerCase()}`}>
-                      <Package />
-                    </div>
+                    <CatalogThumbnail item={item} token={user.token}/>
                     <span className="item-type">{item.type}</span>
                     <h3>{item.name}</h3>
                     <p>{item.description}</p>

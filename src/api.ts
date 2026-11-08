@@ -383,6 +383,8 @@ export const api = {
     const res = await fetch(`/api/bakery/custom-cakes/${id}/reference`, { method: "POST", headers: { Authorization: `Bearer ${token}`, ...(adminTenantContext ? { "X-Tenant-Id": adminTenantContext } : {}) }, body });
     if (!res.ok) throw new Error("Request saved, but the reference image could not be uploaded.");
   },
+  convertCustomCake: (id: string, payload: unknown, token: string) =>
+    request<Record<string, unknown>>(`/bakery/custom-cakes/${id}/convert`, { method: "POST", body: JSON.stringify(payload) }, token),
   bakeryCampaigns: (token: string) => request<Record<string, unknown>>("/bakery/campaigns", {}, token),
   createBakeryCampaign: (payload: unknown, token: string) => request<Record<string, unknown>>("/bakery/campaigns", { method: "POST", body: JSON.stringify(payload) }, token),
   socialStatus: async (token: string) =>

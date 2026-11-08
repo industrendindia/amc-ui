@@ -630,11 +630,16 @@ export function BillsPage({ user }: { user: User }) {
     }),
     [deliveredFiles, setDeliveredFiles] = useState<File[]>([]),
     [mediaNotice, setMediaNotice] = useState("");
+  const [quotes, setQuotes] = useState<Array<Record<string, unknown>>>([]);
+  const [quoteDrafts, setQuoteDrafts] = useState<Record<string,{price:string;paid:string;method:string}>>({});
+  const loadQuotes = () => bakery ? api.customCakeRequests(user.token).then((rows)=>{setQuotes(rows);setQuoteDrafts(current=>{const next={...current};rows.forEach(q=>{const id=String(q.id);if(!next[id])next[id]={price:String(q.quoted_price||q.budget||""),paid:"0",method:"PENDING"}});return next})}) : Promise.resolve();
   const load = () => api.orders(user.token, page, 10, query, bakery ? orderView : "ALL").then(setData);
   useEffect(() => {
     const t = setTimeout(load, 250);
     return () => clearTimeout(t);
   }, [user.token, page, query, orderView]);
+  useEffect(()=>{void loadQuotes()},[user.token,bakery]);
+  async function convertQuote(id:string){const draft=quoteDrafts[id];if(!draft)return;await api.convertCustomCake(id,{quotedPrice:Number(draft.price),initialPayment:Number(draft.paid),paymentMethod:Number(draft.paid)>0?(draft.method==="PENDING"?"UPI":draft.method):"PENDING"},user.token);await Promise.all([load(),loadQuotes()]);}
   async function toggle(id: string) {
     if (expanded === id) {
       setExpanded(null);
@@ -763,6 +768,7 @@ export function BillsPage({ user }: { user: User }) {
         </div>
       </div>
       {bakery && <div className="order-view-tabs">{[["OPEN","Open orders"],["CLOSED","Closed orders"],["CANCELLED","Cancelled orders"]].map(([id,label])=><button key={id} className={orderView===id?"active":""} onClick={()=>{setOrderView(id);setPage(0);setExpanded(null)}}>{label}</button>)}</div>}
+      {bakery && quotes.length>0 && <section className="content-card quotation-panel"><div className="section-title"><div><span className="eyebrow">CUSTOM CAKE REQUESTS</span><h2>Quotations</h2></div><strong>{quotes.filter(q=>q.status!=="CONVERTED").length} awaiting conversion</strong></div><div className="quotation-list">{quotes.map(q=>{const id=String(q.id),draft=quoteDrafts[id]||{price:"",paid:"0",method:"PENDING"};return <article key={id}><div><strong>{String(q.customer_name)} · {String(q.occasion||"Custom cake")}</strong><small>{String(q.customer_phone)} · {String(q.flavour||"Flavour to confirm")} · {String(q.preparation||"")}</small><p>{String(q.design_notes)}</p></div>{q.status==="CONVERTED"?<span className="status-pill paid">CONVERTED</span>:<div className="quotation-payment"><label>Quoted price<input type="number" min="0" value={draft.price} onChange={e=>setQuoteDrafts({...quoteDrafts,[id]:{...draft,price:e.target.value}})}/></label><label>Paying now<input type="number" min="0" max={draft.price} value={draft.paid} onChange={e=>setQuoteDrafts({...quoteDrafts,[id]:{...draft,paid:e.target.value}})}/></label><label>Method<select value={draft.method} onChange={e=>setQuoteDrafts({...quoteDrafts,[id]:{...draft,method:e.target.value}})}><option value="PENDING">Pay later</option><option value="UPI">UPI</option><option value="CASH">Cash</option></select></label><button className="primary" disabled={!draft.price} onClick={()=>convertQuote(id)}>Convert to order</button></div>}</article>})}</div></section>}
       <div className="content-card bill-toolbar">
         <div className="searchbox">
           <Search />
