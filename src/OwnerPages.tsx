@@ -24,7 +24,7 @@ const money = (n: number) =>
 export function CatalogManagementPage({ user }: { user: User }) {
   const [rows, setRows] = useState<Array<Record<string, unknown>>>([]),
     [editing, setEditing] = useState<string | null>(null),
-    [open, setOpen] = useState(false),
+    [open, setOpen] = useState(user.domain === "BAKERY"),
     [error, setError] = useState("");
   const empty = {
     type: "PRODUCT",
@@ -87,7 +87,7 @@ export function CatalogManagementPage({ user }: { user: User }) {
       );
       const savedId = editing || String(saved?.id || "");
       if (imageFile && savedId) await api.uploadCatalogImage(savedId, imageFile, user.token);
-      setOpen(false);
+      setOpen(user.domain === "BAKERY");
       setEditing(null);
       setForm(empty);
       setImageFile(null);
@@ -101,11 +101,11 @@ export function CatalogManagementPage({ user }: { user: User }) {
     <div className="standard-page">
       <div className="page-intro">
         <div>
-          <span className="eyebrow">SHOP CATALOG</span>
-          <h1>Products, services & packages</h1>
-          <p>Only this shop’s configured catalog appears during billing.</p>
+          <span className="eyebrow">{user.domain === "BAKERY" ? "OWNER CATALOGUE MANAGEMENT" : "SHOP CATALOG"}</span>
+          <h1>{user.domain === "BAKERY" ? "Your menu, your creations." : "Products, services & packages"}</h1>
+          <p>{user.domain === "BAKERY" ? "Add cakes with their own flavour, category, price and actual photo." : "Only this shop’s configured catalog appears during billing."}</p>
         </div>
-        <button
+        {user.domain !== "BAKERY" && <button
           className="primary"
           onClick={() => {
             setEditing(null);
@@ -114,12 +114,13 @@ export function CatalogManagementPage({ user }: { user: User }) {
           }}
         >
           <PackagePlus /> Add item
-        </button>
+        </button>}
       </div>
       {open && (
         <form className="content-card employee-form" onSubmit={save}>
+          {user.domain === "BAKERY" && <div className="catalog-form-heading"><h2>{editing ? "Update cake details" : "Add a cake to the catalogue"}</h2><p>Cake information and photos are saved to this shop’s database.</p></div>}
           <div className="form-grid">
-            <label>
+            {user.domain !== "BAKERY" && <label>
               Type
               <select
                 disabled={Boolean(editing)}
@@ -136,9 +137,9 @@ export function CatalogManagementPage({ user }: { user: User }) {
                 <option>SERVICE</option>
                 <option>PACKAGE</option>
               </select>
-            </label>
+            </label>}
             <label>
-              Name
+              {user.domain === "BAKERY" ? "Cake name" : "Name"}
               <input
                 required
                 value={form.name}
@@ -155,7 +156,7 @@ export function CatalogManagementPage({ user }: { user: User }) {
               />
             </label>
             <label>
-              Price
+              {user.domain === "BAKERY" ? "Price per kg (₹)" : "Price"}
               <input
                 required
                 type="number"
@@ -164,7 +165,7 @@ export function CatalogManagementPage({ user }: { user: User }) {
                 onChange={(e) => setForm({ ...form, price: e.target.value })}
               />
             </label>
-            <label>
+            {user.domain !== "BAKERY" && <label>
               Duration in months
               <input
                 type="number"
@@ -174,7 +175,7 @@ export function CatalogManagementPage({ user }: { user: User }) {
                   setForm({ ...form, durationMonths: e.target.value })
                 }
               />
-            </label>
+            </label>}
             <label className="switch-label">
               <input
                 type="checkbox"
@@ -222,23 +223,24 @@ export function CatalogManagementPage({ user }: { user: User }) {
           )}
           {error && <div className="error">{error}</div>}
           <div className="actions">
-            <button
+            {user.domain !== "BAKERY" && <button
               type="button"
               className="text-btn"
               onClick={() => setOpen(false)}
             >
               Cancel
-            </button>
+            </button>}
             <button className="primary">
-              <Save /> Save catalog item
+              <Save /> {user.domain === "BAKERY" ? editing ? "Update cake" : "Add cake to catalogue" : "Save catalog item"}
             </button>
           </div>
         </form>
       )}
+      {user.domain === "BAKERY" && <div className="cake-menu-heading"><h2>{rows.filter(r=>r.type==="PRODUCT").length} cakes in your menu</h2></div>}
       <div className="catalog-admin-grid">
-        {["PRODUCT", "SERVICE", "PACKAGE"].map((type) => (
+        {(user.domain === "BAKERY" ? ["PRODUCT"] : ["PRODUCT", "SERVICE", "PACKAGE"]).map((type) => (
           <section className="content-card" key={type}>
-            <h2>{type[0] + type.slice(1).toLowerCase()}</h2>
+            <h2>{user.domain === "BAKERY" ? "Cakes" : type[0] + type.slice(1).toLowerCase()}</h2>
             {rows
               .filter((r) => r.type === type)
               .map((r) => (

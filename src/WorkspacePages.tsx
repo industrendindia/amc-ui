@@ -1265,6 +1265,7 @@ export function AdminTenantsPage({ user }: { user: User }) {
           ? x.map((row) => (String(row.id) === editingId ? t : row))
           : [t, ...x],
       );
+      window.dispatchEvent(new CustomEvent("tenant-config-updated", { detail: t }));
       setOpen(false);
       setEditingId(null);
       setLogoFile(null);

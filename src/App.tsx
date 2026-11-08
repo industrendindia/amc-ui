@@ -241,7 +241,11 @@ function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
   >([]);
   const [selectedTenantId, setSelectedTenantId] = useState("");
   useEffect(() => {
-    if (platformUser) api.tenants(user.token).then(setAdminTenants);
+    if (!platformUser) return;
+    const refresh = () => api.tenants(user.token).then(setAdminTenants);
+    void refresh();
+    window.addEventListener("tenant-config-updated", refresh);
+    return () => window.removeEventListener("tenant-config-updated", refresh);
   }, [user.role, user.token]);
   const selectedTenant = adminTenants.find(
     (t) => String(t.id) === selectedTenantId,
@@ -269,7 +273,7 @@ function Shell({ user, onSignOut }: { user: User; onSignOut: () => void }) {
       document.documentElement.dataset.domain = "PLATFORM";
       setPage(user.role === "ADMIN" ? "admin" : "onboarding");
     }
-  }, [selectedTenantId]);
+  }, [selectedTenantId, selectedTenant?.themeKey, selectedTenant?.domain]);
   useEffect(() => {
     if (!workspaceUser.tenantName || user.role === "EMPLOYEE") return;
     api.notificationTodayCount(user.token)
